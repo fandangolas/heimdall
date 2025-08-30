@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Optional
 
 from ..value_objects import Email, Password, PasswordHash, UserId
 from .session import Session
@@ -17,7 +17,7 @@ class User:
     password_hash: PasswordHash
     is_active: bool = True
     is_verified: bool = False
-    permissions: List[str] = field(default_factory=list)
+    permissions: list[str] = field(default_factory=list)
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     updated_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     last_login_at: Optional[datetime] = None

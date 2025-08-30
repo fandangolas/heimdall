@@ -1,8 +1,7 @@
 """Base domain event."""
 
-from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import Any, Dict
+from typing import Any
 import uuid
 
 
@@ -18,7 +17,7 @@ class DomainEvent:
         """Get the event type name."""
         return self.__class__.__name__
     
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary for serialization."""
         return {
             "event_id": self.event_id,
@@ -27,7 +26,7 @@ class DomainEvent:
             "data": self._get_event_data(),
         }
     
-    def _get_event_data(self) -> Dict[str, Any]:
+    def _get_event_data(self) -> dict[str, Any]:
         """Get event-specific data. Override in subclasses."""
         data = {}
         for key, value in self.__dict__.items():

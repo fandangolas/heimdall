@@ -1,7 +1,7 @@
 """Authentication DTOs."""
 
 from dataclasses import dataclass
-from typing import List
+# No typing imports needed - using built-in types
 
 
 @dataclass

@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
-from typing import List
+# No typing imports needed - using built-in types
 
 from ..value_objects import Email, SessionId, UserId, TokenClaims
 
@@ -14,7 +14,7 @@ class Session:
     id: SessionId
     user_id: UserId
     email: Email
-    permissions: List[str]
+    permissions: list[str]
     created_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     expires_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc) + timedelta(hours=24))
     is_active: bool = True
@@ -41,7 +41,7 @@ class Session:
         )
     
     @classmethod
-    def create_for_user(cls, user_id: UserId, email: Email, permissions: List[str]) -> 'Session':
+    def create_for_user(cls, user_id: UserId, email: Email, permissions: list[str]) -> 'Session':
         """Create a new session for a user."""
         return cls(
             id=SessionId.generate(),

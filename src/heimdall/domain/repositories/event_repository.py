@@ -1,7 +1,7 @@
 """Event repository interface."""
 
 from abc import ABC, abstractmethod
-from typing import List
+# No typing imports needed - using built-in types
 from datetime import datetime
 
 from ..events import DomainEvent
@@ -16,7 +16,7 @@ class EventRepository(ABC):
         pass
     
     @abstractmethod
-    async def find_by_aggregate_id(self, aggregate_id: str) -> List[DomainEvent]:
+    async def find_by_aggregate_id(self, aggregate_id: str) -> list[DomainEvent]:
         """Find all events for an aggregate."""
         pass
     
@@ -25,6 +25,6 @@ class EventRepository(ABC):
         self, 
         start_time: datetime, 
         end_time: datetime
-    ) -> List[DomainEvent]:
+    ) -> list[DomainEvent]:
         """Find events within a time range."""
         pass

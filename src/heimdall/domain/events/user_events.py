@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import Optional
 import uuid
 
 from ..value_objects import Email, UserId, SessionId

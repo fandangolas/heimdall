@@ -2,7 +2,7 @@
 
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
-from typing import List, Optional
+from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -12,7 +12,7 @@ class TokenClaims:
     user_id: str
     session_id: str
     email: str
-    permissions: List[str] = field(default_factory=list)
+    permissions: list[str] = field(default_factory=list)
     issued_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
     expires_at: Optional[datetime] = None
     

@@ -1,7 +1,7 @@
 """Session repository interface."""
 
 from abc import ABC, abstractmethod
-from typing import List, Optional
+from typing import Optional
 
 from ..entities import Session
 from ..value_objects import SessionId, UserId
@@ -16,7 +16,7 @@ class SessionRepository(ABC):
         pass
     
     @abstractmethod
-    async def find_active_by_user(self, user_id: UserId) -> List[Session]:
+    async def find_active_by_user(self, user_id: UserId) -> list[Session]:
         """Find all active sessions for a user."""
         pass
     

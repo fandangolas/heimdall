@@ -1,7 +1,7 @@
 """Token validation DTOs."""
 
 from dataclasses import dataclass
-from typing import List, Optional
+from typing import Optional
 
 
 @dataclass
@@ -16,5 +16,5 @@ class ValidateTokenResponse:
     is_valid: bool
     user_id: Optional[str] = None
     email: Optional[str] = None
-    permissions: Optional[List[str]] = None
+    permissions: Optional[list[str]] = None
     error: Optional[str] = None
