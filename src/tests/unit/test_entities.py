@@ -8,9 +8,11 @@ from heimdall.domain.entities import Session, User
 from heimdall.domain.value_objects import (
     Email,
     Password,
-    PasswordHash,
-    SessionId,
-    UserId,
+    SessionIdValue,
+    UserIdValue,
+    generate_session_id,
+    generate_user_id,
+    verify_password,
 )
 
 
@@ -24,9 +26,9 @@ class TestUser:
 
         user = User.create(email, password)
 
-        assert isinstance(user.id, UserId)
+        assert isinstance(user.id, UserIdValue)
         assert user.email == email
-        assert isinstance(user.password_hash, PasswordHash)
+        assert user.password_hash.value  # Should have a hash value
         assert user.is_active is True
         assert user.is_verified is False
         assert user.permissions == []
@@ -78,8 +80,8 @@ class TestUser:
 
         user.change_password(current_password, new_password)
 
-        assert user.password_hash.verify(new_password) is True
-        assert user.password_hash.verify(current_password) is False
+        assert verify_password(new_password, user.password_hash) is True
+        assert verify_password(current_password, user.password_hash) is False
         assert user.updated_at > old_updated_at
 
     def test_change_password_wrong_current(self):
@@ -171,13 +173,13 @@ class TestSession:
 
     def test_create_for_user(self):
         """Test creating session for user."""
-        user_id = UserId.generate()
+        user_id = generate_user_id()
         email = Email("test@example.com")
         permissions = ["read", "write"]
 
         session = Session.create_for_user(user_id, email, permissions)
 
-        assert isinstance(session.id, SessionId)
+        assert isinstance(session.id, SessionIdValue)
         assert session.user_id == user_id
         assert session.email == email
         assert session.permissions == permissions
@@ -189,7 +191,7 @@ class TestSession:
 
     def test_is_valid_active_session(self):
         """Test valid active session."""
-        user_id = UserId.generate()
+        user_id = generate_user_id()
         email = Email("test@example.com")
         session = Session.create_for_user(user_id, email, [])
 
@@ -198,7 +200,7 @@ class TestSession:
 
     def test_is_valid_expired_session(self):
         """Test expired session is not valid."""
-        user_id = UserId.generate()
+        user_id = generate_user_id()
         email = Email("test@example.com")
         session = Session.create_for_user(user_id, email, [])
 
@@ -210,7 +212,7 @@ class TestSession:
 
     def test_is_valid_inactive_session(self):
         """Test inactive session is not valid."""
-        user_id = UserId.generate()
+        user_id = generate_user_id()
         email = Email("test@example.com")
         session = Session.create_for_user(user_id, email, [])
 
@@ -221,7 +223,7 @@ class TestSession:
 
     def test_invalidate_session(self):
         """Test invalidating session."""
-        user_id = UserId.generate()
+        user_id = generate_user_id()
         email = Email("test@example.com")
         session = Session.create_for_user(user_id, email, [])
 
@@ -231,7 +233,7 @@ class TestSession:
 
     def test_to_token_claims(self):
         """Test converting session to token claims."""
-        user_id = UserId.generate()
+        user_id = generate_user_id()
         email = Email("test@example.com")
         permissions = ["read", "write"]
         session = Session.create_for_user(user_id, email, permissions)
@@ -241,17 +243,17 @@ class TestSession:
         assert claims.user_id == str(user_id)
         assert claims.session_id == str(session.id)
         assert claims.email == str(email)
-        assert claims.permissions == permissions
+        assert claims.permissions == tuple(permissions)
         assert claims.permissions is not permissions  # Should be a copy
 
     def test_session_with_custom_expiration(self):
         """Test session with custom expiration time."""
-        user_id = UserId.generate()
+        user_id = generate_user_id()
         email = Email("test@example.com")
         custom_expiration = datetime.now(UTC) + timedelta(hours=2)
 
         session = Session(
-            id=SessionId.generate(),
+            id=generate_session_id(),
             user_id=user_id,
             email=email,
             permissions=[],

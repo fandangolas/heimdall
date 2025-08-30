@@ -1,101 +1,91 @@
 """User-related domain events."""
 
-from dataclasses import dataclass
-
 from ..value_objects import Email, SessionId, UserId
-from .base import DomainEvent
+from .base import DomainEvent, DomainEventValue
 
 
-@dataclass
-class UserCreated(DomainEvent):
-    """Event raised when a new user is created."""
-
-    user_id: UserId
-    email: Email
-
-    def __post_init__(self):
-        """Initialize domain event."""
-        super().__init__()
-
-
-@dataclass
-class UserLoggedIn(DomainEvent):
-    """Event raised when a user logs in."""
-
-    user_id: UserId
-    session_id: SessionId
-    email: Email
-
-    def __post_init__(self):
-        """Initialize domain event."""
-        super().__init__()
+def UserCreated(user_id: UserId, email: Email) -> DomainEventValue:
+    """Create UserCreated event."""
+    return DomainEvent(
+        event_type="UserCreated",
+        data={
+            "user_id": str(user_id),
+            "email": str(email),
+        },
+    )
 
 
-@dataclass
-class UserLoggedOut(DomainEvent):
-    """Event raised when a user logs out."""
-
-    user_id: UserId
-    session_id: SessionId
-
-    def __post_init__(self):
-        """Initialize domain event."""
-        super().__init__()
-
-
-@dataclass
-class UserPasswordChanged(DomainEvent):
-    """Event raised when a user changes their password."""
-
-    user_id: UserId
-
-    def __post_init__(self):
-        """Initialize domain event."""
-        super().__init__()
+def UserLoggedIn(
+    user_id: UserId, session_id: SessionId, email: Email
+) -> DomainEventValue:
+    """Create UserLoggedIn event."""
+    return DomainEvent(
+        event_type="UserLoggedIn",
+        data={
+            "user_id": str(user_id),
+            "session_id": str(session_id),
+            "email": str(email),
+        },
+    )
 
 
-@dataclass
-class UserPermissionGranted(DomainEvent):
-    """Event raised when a permission is granted to a user."""
-
-    user_id: UserId
-    permission: str
-
-    def __post_init__(self):
-        """Initialize domain event."""
-        super().__init__()
-
-
-@dataclass
-class UserPermissionRevoked(DomainEvent):
-    """Event raised when a permission is revoked from a user."""
-
-    user_id: UserId
-    permission: str
-
-    def __post_init__(self):
-        """Initialize domain event."""
-        super().__init__()
+def UserLoggedOut(user_id: UserId, session_id: SessionId) -> DomainEventValue:
+    """Create UserLoggedOut event."""
+    return DomainEvent(
+        event_type="UserLoggedOut",
+        data={
+            "user_id": str(user_id),
+            "session_id": str(session_id),
+        },
+    )
 
 
-@dataclass
-class UserDeactivated(DomainEvent):
-    """Event raised when a user account is deactivated."""
-
-    user_id: UserId
-    reason: str | None = None
-
-    def __post_init__(self):
-        """Initialize domain event."""
-        super().__init__()
+def UserPasswordChanged(user_id: UserId) -> DomainEventValue:
+    """Create UserPasswordChanged event."""
+    return DomainEvent(
+        event_type="UserPasswordChanged",
+        data={
+            "user_id": str(user_id),
+        },
+    )
 
 
-@dataclass
-class UserActivated(DomainEvent):
-    """Event raised when a user account is activated."""
+def UserPermissionGranted(user_id: UserId, permission: str) -> DomainEventValue:
+    """Create UserPermissionGranted event."""
+    return DomainEvent(
+        event_type="UserPermissionGranted",
+        data={
+            "user_id": str(user_id),
+            "permission": permission,
+        },
+    )
 
-    user_id: UserId
 
-    def __post_init__(self):
-        """Initialize domain event."""
-        super().__init__()
+def UserPermissionRevoked(user_id: UserId, permission: str) -> DomainEventValue:
+    """Create UserPermissionRevoked event."""
+    return DomainEvent(
+        event_type="UserPermissionRevoked",
+        data={
+            "user_id": str(user_id),
+            "permission": permission,
+        },
+    )
+
+
+def UserDeactivated(user_id: UserId, reason: str | None = None) -> DomainEventValue:
+    """Create UserDeactivated event."""
+    data = {"user_id": str(user_id)}
+    if reason is not None:
+        data["reason"] = reason
+
+    return DomainEvent(event_type="UserDeactivated", data=data)
+
+
+def UserActivated(user_id: UserId) -> DomainEventValue:
+    """Create UserActivated event."""
+    return DomainEvent(
+        event_type="UserActivated",
+        data={
+            "user_id": str(user_id),
+        },
+    )

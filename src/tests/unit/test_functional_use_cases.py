@@ -15,9 +15,9 @@ from heimdall.domain.entities import User
 from heimdall.domain.value_objects import (
     Email,
     Password,
-    SessionId,
     Token,
     TokenClaims,
+    generate_session_id,
 )
 
 
@@ -32,7 +32,7 @@ class TestFunctionalLogin:
 
         user = User.create(Email("test@example.com"), Password("Password123"))
         session = Mock()
-        session.id = SessionId.generate()
+        session.id = generate_session_id()
 
         # Mock authenticate to return our session
         user.authenticate = Mock(return_value=session)
@@ -164,7 +164,7 @@ class TestFunctionalValidateToken:
         """Test validating a valid token."""
         # Arrange
         token = Token("fake.jwt.token")
-        session_id = SessionId.generate()
+        session_id = generate_session_id()
         claims = TokenClaims(
             user_id="user123",
             session_id=str(session_id),
@@ -196,14 +196,14 @@ class TestFunctionalValidateToken:
         assert result["is_valid"] is True
         assert result["user_id"] == "user123"
         assert result["email"] == "test@example.com"
-        assert result["permissions"] == ["read"]
+        assert result["permissions"] == ("read",)
 
     @pytest.mark.asyncio
     async def test_invalid_session(self):
         """Test validating token with invalid session."""
         # Arrange
         token = Token("fake.jwt.token")
-        session_id = SessionId.generate()
+        session_id = generate_session_id()
         claims = TokenClaims(
             user_id="user123", session_id=str(session_id), email="test@example.com"
         )

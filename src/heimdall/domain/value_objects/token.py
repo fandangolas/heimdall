@@ -1,26 +1,18 @@
-"""Token value objects."""
+"""Token value objects - functional approach."""
 
-from dataclasses import dataclass, field
 from datetime import UTC, datetime, timedelta
+from typing import NamedTuple
 
 
-@dataclass(frozen=True)
-class TokenClaims:
+class TokenClaimsValue(NamedTuple):
     """JWT token claims."""
 
     user_id: str
     session_id: str
     email: str
-    permissions: list[str] = field(default_factory=list)
-    issued_at: datetime = field(default_factory=lambda: datetime.now(UTC))
-    expires_at: datetime | None = None
-
-    def __post_init__(self) -> None:
-        """Set default expiration if not provided."""
-        if self.expires_at is None:
-            # Default to 15 minutes from issued_at
-            expires = self.issued_at + timedelta(minutes=15)
-            object.__setattr__(self, "expires_at", expires)
+    permissions: tuple[str, ...]
+    issued_at: datetime
+    expires_at: datetime
 
     def is_expired(self) -> bool:
         """Check if token claims are expired."""
@@ -32,41 +24,75 @@ class TokenClaims:
             "sub": self.user_id,
             "sid": self.session_id,
             "email": self.email,
-            "permissions": self.permissions,
+            "permissions": list(self.permissions),
             "iat": int(self.issued_at.timestamp()),
             "exp": int(self.expires_at.timestamp()),
         }
 
-    @classmethod
-    def from_dict(cls, data: dict) -> "TokenClaims":
-        """Create from JWT decoded dictionary."""
-        return cls(
-            user_id=data["sub"],
-            session_id=data["sid"],
-            email=data["email"],
-            permissions=data.get("permissions", []),
-            issued_at=datetime.fromtimestamp(data["iat"], tz=UTC),
-            expires_at=datetime.fromtimestamp(data["exp"], tz=UTC),
-        )
 
-
-@dataclass(frozen=True)
-class Token:
+class TokenValue(NamedTuple):
     """JWT token value object."""
 
     value: str
-    claims: TokenClaims | None = None
-
-    def __post_init__(self) -> None:
-        """Validate token format."""
-        if not self.value:
-            raise ValueError("Token cannot be empty")
-
-        # Basic JWT format validation (three parts separated by dots)
-        parts = self.value.split(".")
-        if len(parts) != 3:
-            raise ValueError("Invalid token format")
+    claims: TokenClaimsValue | None = None
 
     def __str__(self) -> str:
         """String representation (masked for security)."""
         return f"Token(...{self.value[-10:]})"
+
+
+def TokenClaims(
+    user_id: str,
+    session_id: str,
+    email: str,
+    permissions: list[str] | None = None,
+    issued_at: datetime | None = None,
+    expires_at: datetime | None = None,
+) -> TokenClaimsValue:
+    """Create token claims with defaults."""
+    if permissions is None:
+        permissions = []
+
+    if issued_at is None:
+        issued_at = datetime.now(UTC)
+
+    if expires_at is None:
+        expires_at = issued_at + timedelta(minutes=15)
+
+    return TokenClaimsValue(
+        user_id=user_id,
+        session_id=session_id,
+        email=email,
+        permissions=tuple(permissions),  # Convert to tuple for immutability
+        issued_at=issued_at,
+        expires_at=expires_at,
+    )
+
+
+def TokenClaimsFromDict(data: dict) -> TokenClaimsValue:
+    """Create token claims from JWT decoded dictionary."""
+    return TokenClaimsValue(
+        user_id=data["sub"],
+        session_id=data["sid"],
+        email=data["email"],
+        permissions=tuple(data.get("permissions", [])),
+        issued_at=datetime.fromtimestamp(data["iat"], tz=UTC),
+        expires_at=datetime.fromtimestamp(data["exp"], tz=UTC),
+    )
+
+
+def Token(token_string: str, claims: TokenClaimsValue | None = None) -> TokenValue:
+    """Create and validate a JWT token value object."""
+    if not token_string:
+        raise ValueError("Token cannot be empty")
+
+    # Basic JWT format validation (three parts separated by dots)
+    parts = token_string.split(".")
+    if len(parts) != 3:
+        raise ValueError("Invalid token format")
+
+    return TokenValue(value=token_string, claims=claims)
+
+
+# Add backward compatibility methods
+TokenClaimsValue.from_dict = staticmethod(TokenClaimsFromDict)

@@ -5,6 +5,7 @@ from datetime import UTC, datetime, timedelta
 
 # No typing imports needed - using built-in types
 from ..value_objects import Email, SessionId, TokenClaims, UserId
+from ..value_objects.session_id import generate_session_id
 
 
 @dataclass
@@ -48,7 +49,7 @@ class Session:
     ) -> "Session":
         """Create a new session for a user."""
         return cls(
-            id=SessionId.generate(),
+            id=generate_session_id(),
             user_id=user_id,
             email=email,
             permissions=permissions.copy(),

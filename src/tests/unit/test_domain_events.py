@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 
 from heimdall.domain.events import (
     DomainEvent,
+    DomainEventValue,
     UserActivated,
     UserCreated,
     UserDeactivated,
@@ -13,25 +14,30 @@ from heimdall.domain.events import (
     UserPermissionGranted,
     UserPermissionRevoked,
 )
-from heimdall.domain.value_objects import Email, SessionId, UserId
+from heimdall.domain.value_objects import (
+    Email,
+    generate_session_id,
+    generate_user_id,
+)
 
 
 class TestDomainEvent:
-    """Test base DomainEvent class."""
+    """Test base DomainEvent function."""
 
     def test_create_domain_event(self):
         """Test creating a domain event."""
-        event = DomainEvent()
+        event = DomainEvent("TestEvent", {"test": "value"})
 
         assert event.event_id is not None
         assert len(event.event_id) == 36  # UUID format
         assert isinstance(event.occurred_at, datetime)
         assert event.occurred_at.tzinfo == UTC
-        assert event.event_type == "DomainEvent"
+        assert event.event_type == "TestEvent"
+        assert isinstance(event, DomainEventValue)
 
     def test_to_dict(self):
         """Test converting event to dictionary."""
-        event = DomainEvent()
+        event = DomainEvent("TestEvent", {"test": "value"})
 
         data = event.to_dict()
 
@@ -39,7 +45,8 @@ class TestDomainEvent:
         assert "event_type" in data
         assert "occurred_at" in data
         assert "data" in data
-        assert data["event_type"] == "DomainEvent"
+        assert data["event_type"] == "TestEvent"
+        assert data["data"]["test"] == "value"
         assert isinstance(data["occurred_at"], str)
 
 
@@ -48,13 +55,13 @@ class TestUserEvents:
 
     def test_user_created_event(self):
         """Test UserCreated event."""
-        user_id = UserId.generate()
+        user_id = generate_user_id()
         email = Email("test@example.com")
 
         event = UserCreated(user_id=user_id, email=email)
 
-        assert event.user_id == user_id
-        assert event.email == email
+        assert event.data["user_id"] == str(user_id)
+        assert event.data["email"] == str(email)
         assert event.event_type == "UserCreated"
         assert isinstance(event.occurred_at, datetime)
 
@@ -65,15 +72,15 @@ class TestUserEvents:
 
     def test_user_logged_in_event(self):
         """Test UserLoggedIn event."""
-        user_id = UserId.generate()
-        session_id = SessionId.generate()
+        user_id = generate_user_id()
+        session_id = generate_session_id()
         email = Email("test@example.com")
 
         event = UserLoggedIn(user_id=user_id, session_id=session_id, email=email)
 
-        assert event.user_id == user_id
-        assert event.session_id == session_id
-        assert event.email == email
+        assert event.data["user_id"] == str(user_id)
+        assert event.data["session_id"] == str(session_id)
+        assert event.data["email"] == str(email)
         assert event.event_type == "UserLoggedIn"
 
         data = event.to_dict()
@@ -84,33 +91,33 @@ class TestUserEvents:
 
     def test_user_logged_out_event(self):
         """Test UserLoggedOut event."""
-        user_id = UserId.generate()
-        session_id = SessionId.generate()
+        user_id = generate_user_id()
+        session_id = generate_session_id()
 
         event = UserLoggedOut(user_id=user_id, session_id=session_id)
 
-        assert event.user_id == user_id
-        assert event.session_id == session_id
+        assert event.data["user_id"] == str(user_id)
+        assert event.data["session_id"] == str(session_id)
         assert event.event_type == "UserLoggedOut"
 
     def test_user_password_changed_event(self):
         """Test UserPasswordChanged event."""
-        user_id = UserId.generate()
+        user_id = generate_user_id()
 
         event = UserPasswordChanged(user_id=user_id)
 
-        assert event.user_id == user_id
+        assert event.data["user_id"] == str(user_id)
         assert event.event_type == "UserPasswordChanged"
 
     def test_user_permission_granted_event(self):
         """Test UserPermissionGranted event."""
-        user_id = UserId.generate()
+        user_id = generate_user_id()
         permission = "read"
 
         event = UserPermissionGranted(user_id=user_id, permission=permission)
 
-        assert event.user_id == user_id
-        assert event.permission == permission
+        assert event.data["user_id"] == str(user_id)
+        assert event.data["permission"] == permission
         assert event.event_type == "UserPermissionGranted"
 
         data = event.to_dict()
@@ -118,24 +125,24 @@ class TestUserEvents:
 
     def test_user_permission_revoked_event(self):
         """Test UserPermissionRevoked event."""
-        user_id = UserId.generate()
+        user_id = generate_user_id()
         permission = "write"
 
         event = UserPermissionRevoked(user_id=user_id, permission=permission)
 
-        assert event.user_id == user_id
-        assert event.permission == permission
+        assert event.data["user_id"] == str(user_id)
+        assert event.data["permission"] == permission
         assert event.event_type == "UserPermissionRevoked"
 
     def test_user_deactivated_event(self):
         """Test UserDeactivated event."""
-        user_id = UserId.generate()
+        user_id = generate_user_id()
         reason = "Account suspended"
 
         event = UserDeactivated(user_id=user_id, reason=reason)
 
-        assert event.user_id == user_id
-        assert event.reason == reason
+        assert event.data["user_id"] == str(user_id)
+        assert event.data["reason"] == reason
         assert event.event_type == "UserDeactivated"
 
         data = event.to_dict()
@@ -143,26 +150,26 @@ class TestUserEvents:
 
     def test_user_deactivated_event_no_reason(self):
         """Test UserDeactivated event without reason."""
-        user_id = UserId.generate()
+        user_id = generate_user_id()
 
         event = UserDeactivated(user_id=user_id)
 
-        assert event.user_id == user_id
-        assert event.reason is None
+        assert event.data["user_id"] == str(user_id)
+        assert "reason" not in event.data
         assert event.event_type == "UserDeactivated"
 
     def test_user_activated_event(self):
         """Test UserActivated event."""
-        user_id = UserId.generate()
+        user_id = generate_user_id()
 
         event = UserActivated(user_id=user_id)
 
-        assert event.user_id == user_id
+        assert event.data["user_id"] == str(user_id)
         assert event.event_type == "UserActivated"
 
     def test_event_serialization(self):
         """Test event serialization to dict."""
-        user_id = UserId.generate()
+        user_id = generate_user_id()
         email = Email("test@example.com")
         event = UserCreated(user_id=user_id, email=email)
 
@@ -186,7 +193,7 @@ class TestUserEvents:
 
     def test_multiple_events_have_different_ids(self):
         """Test that multiple events have different IDs."""
-        user_id = UserId.generate()
+        user_id = generate_user_id()
 
         event1 = UserPasswordChanged(user_id=user_id)
         event2 = UserPasswordChanged(user_id=user_id)

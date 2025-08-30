@@ -23,27 +23,58 @@ This 1000:1 read/write ratio drove our architectural decisions toward CQRS (Comm
 - **Domain-Driven Design** - Rich domain models
 - **Functional Programming** - Pure functions for business logic
 
-### Key Decisions
+### Key Decisions: Hybrid Functional/OOP Architecture
 
-#### Where We Use Functional Programming
-- **Use Cases** - Pure functions that accept `(request, dependencies)` 
-- **Business Logic** - Stateless transformations and validations
-- **Dependency Injection** - Function composition and partial application
+We use each paradigm where it's strongest:
+
+| Component | Approach | Reasoning |
+|-----------|----------|-----------|
+| **Use Cases** | 🟡 Functional | Pure transformations, easier testing |
+| **Value Objects** | 🟡 Functional | Immutable data, no identity |
+| **Domain Events** | 🟡 Functional | Immutable event data, no behavior needed |
+| **DTOs** | 🟡 Functional | Pure data containers for boundaries |
+| **Entities** | 🔵 OOP | Identity + behavior, natural domain modeling |
+| **Services** | 🟡 Functional | Stateless operations, better composition |
+| **Repositories** | 🔵 OOP | Abstract interfaces, familiar patterns |
+
+#### Functional Programming (🟡)
+- **Use Cases** - Pure functions: `async def login_user(request, deps) -> response`
+- **Value Objects** - Immutable data structures with validation: `NamedTuple + factory functions`
+- **Domain Events** - Immutable event data: `UserCreated(user_id, email) -> DomainEventValue`
+- **DTOs** - Pure data containers: `LoginRequest(email, password) -> LoginRequestValue`
+- **Service Composition** - Function composition and partial application
 
 ```python
-# Example: Functional use case
+# Pure function use case
 async def login_user(request: LoginRequest, deps: Dependencies) -> LoginResponse:
     user = await deps.user_repository.find_by_email(email)
-    session = user.authenticate(password)
-    # ...
+    session = user.authenticate(password)  # Entity method
+    return LoginResponse(access_token=token.value)
+
+# Immutable value object
+class EmailValue(NamedTuple):
+    value: str
+    domain: str
+
+def Email(email_string: str) -> EmailValue:
+    # Validation + normalization
+    return EmailValue(value=normalized, domain=domain)
 ```
 
-#### Where We Use OOP
-- **Domain Entities** - User, Session (objects with identity and behavior)
-- **Value Objects** - Email, Password, Token (immutable domain concepts)
-- **Repository Interfaces** - Abstract data access patterns
+#### Object-Oriented Programming (🔵)
+- **Domain Entities** - Rich objects with identity and behavior
+- **Repository Interfaces** - Abstract data access contracts
 
-The reasoning: Entities and Value Objects represent core business concepts that benefit from encapsulation, while use cases are essentially data transformations that work better as pure functions.
+```python
+# Entity with identity and behavior
+class User:
+    def authenticate(self, password: Password) -> Session:
+        if not self.password_hash.verify(password):
+            raise ValueError("Invalid credentials")
+        return Session.create_for_user(self.id, self.email, self.permissions)
+```
+
+This hybrid approach gives us **immutability where it matters** (value objects, use cases) and **rich domain models where appropriate** (entities with business logic).
 
 ## 🚀 Progressive Architecture
 
@@ -61,14 +92,16 @@ The project follows a phased approach to CQRS adoption:
 src/
 ├── heimdall/
 │   ├── domain/          # Business rules & entities
-│   │   ├── entities/    # User, Session
-│   │   ├── value_objects/  # Email, Password, Token
-│   │   └── repositories/   # Abstract interfaces
+│   │   ├── entities/    # User, Session (OOP)
+│   │   ├── value_objects/  # Email, Password, Token (Functional)
+│   │   ├── events/      # Domain events (Functional)
+│   │   └── repositories/   # Abstract interfaces (OOP)
 │   └── application/     # Use cases & orchestration
-│       ├── use_cases/   # Pure business functions
-│       └── services/    # Function composition
+│       ├── dto/         # Data Transfer Objects (Functional)
+│       ├── use_cases/   # Pure business functions (Functional)
+│       └── services/    # Function composition (Functional)
 └── tests/
-    └── unit/           # Comprehensive test coverage
+    └── unit/           # Comprehensive test coverage (73 tests)
 ```
 
 ## 🧪 Testing

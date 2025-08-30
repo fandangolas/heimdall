@@ -6,10 +6,24 @@
 ## Core Architecture
 - **Clean Architecture**: Layered architecture with clear boundaries and dependencies pointing inward
 - **Domain-Driven Design (DDD)**: Rich domain models, aggregates, and value objects
+- **Hybrid Functional/OOP**: Strategic use of functional programming where it adds value
 - **SOLID Principles**: Single responsibility, dependency injection, interface segregation
 - **Gradual CQRS Adoption**: Progressive separation of read/write operations as performance needs grow
 - **Event-Driven**: Domain events for audit trails and state changes
 - **Read-Heavy Optimization**: 100:1 read/write ratio optimization with Redis caching
+
+### Functional vs OOP Strategy
+| Component | Approach | Reasoning |
+|-----------|----------|-----------|
+| **Use Cases** | 🟡 Functional | `async def login_user(request, deps)` - Pure transformations, easier testing |
+| **Value Objects** | 🟡 Functional | `Email = NamedTuple(...)` - Immutable data, no identity |
+| **Domain Events** | 🟡 Functional | `UserCreated(user_id, email)` - Immutable event data, no behavior needed |
+| **DTOs** | 🟡 Functional | `LoginRequest(email, password)` - Pure data containers for boundaries |
+| **Entities** | 🔵 OOP | `class User:` - Identity + behavior, natural domain modeling |
+| **Services** | 🟡 Functional | Function composition, stateless operations |
+| **Repositories** | 🔵 OOP | `class UserRepository:` - Abstract interfaces, familiar patterns |
+
+**Key Insight**: Use functional programming for **data transformations** (use cases, value objects, domain events, DTOs) and OOP for **domain concepts with identity** (entities, repositories).
 
 ## Technology Stack
 - **Language**: Python 3.13.7
@@ -23,13 +37,15 @@
 
 ## Development Milestones (Revised for Progressive Architecture)
 
-### Phase 1: Clean Architecture Foundation with DDD
+### Phase 1: Clean Architecture Foundation with DDD ✅ COMPLETED
 **Goal**: Establish solid architectural foundation with SOLID principles
-1. **Domain Layer**: Core entities (User, Session), value objects (Token, Permission), domain services
-2. **Use Cases**: Separate use cases for each operation (LoginUseCase, ValidateTokenUseCase)
-3. **Repository Pattern**: Abstract interfaces for data access
-4. **Dependency Injection**: FastAPI's DI for loose coupling
-5. **Basic JWT**: Simple token generation and validation
+1. **Domain Layer**: Core entities (User, Session), value objects (Email, Password, Token), domain events ✅
+2. **Use Cases**: Pure functional use cases (login_user, register_user, validate_token) ✅
+3. **Repository Pattern**: Abstract interfaces for data access ✅
+4. **Hybrid Functional/OOP**: Complete functional data layer + OOP entities ✅
+5. **Comprehensive Testing**: 73 unit tests covering all components ✅
+
+**Status**: All functional/OOP components implemented with full test coverage
 
 ### Phase 2: Read/Write Optimization (Simple CQRS)
 **Goal**: Optimize for 100:1 read/write ratio without full CQRS complexity

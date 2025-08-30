@@ -1,32 +1,33 @@
-"""Email value object."""
+"""Email value object - functional approach."""
 
 import re
-from dataclasses import dataclass
+from typing import NamedTuple
+
+EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
 
 
-@dataclass(frozen=True)
-class Email:
-    """Email value object with validation."""
+class EmailValue(NamedTuple):
+    """Immutable email value object."""
 
     value: str
-
-    EMAIL_REGEX = re.compile(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
-
-    def __post_init__(self) -> None:
-        """Validate email format after initialization."""
-        if not self.value:
-            raise ValueError("Email cannot be empty")
-
-        if not self.EMAIL_REGEX.match(self.value):
-            raise ValueError(f"Invalid email format: {self.value}")
-
-        # Normalize email to lowercase
-        object.__setattr__(self, "value", self.value.lower())
+    domain: str
 
     def __str__(self) -> str:
         """String representation."""
         return self.value
 
-    def domain(self) -> str:
-        """Get the domain part of the email."""
-        return self.value.split("@")[1]
+
+def Email(email_string: str) -> EmailValue:
+    """Create and validate an email value object."""
+    if not email_string:
+        raise ValueError("Email cannot be empty")
+
+    # Normalize to lowercase
+    normalized = email_string.lower()
+
+    if not EMAIL_REGEX.match(normalized):
+        raise ValueError(f"Invalid email format: {email_string}")
+
+    domain = normalized.split("@")[1]
+
+    return EmailValue(value=normalized, domain=domain)

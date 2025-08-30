@@ -1,31 +1,37 @@
-"""Session ID value object."""
+"""Session ID value object - functional approach."""
 
 import uuid
-from dataclasses import dataclass
+from typing import NamedTuple
 
 
-@dataclass(frozen=True)
-class SessionId:
+class SessionIdValue(NamedTuple):
     """Session identifier value object."""
 
     value: str
 
-    def __post_init__(self) -> None:
-        """Validate session ID format."""
-        if not self.value:
-            raise ValueError("Session ID cannot be empty")
-
-        # Validate UUID format
-        try:
-            uuid.UUID(self.value)
-        except ValueError as e:
-            raise ValueError(f"Invalid session ID format: {self.value}") from e
-
-    @classmethod
-    def generate(cls) -> "SessionId":
-        """Generate a new session ID."""
-        return cls(str(uuid.uuid4()))
-
     def __str__(self) -> str:
         """String representation."""
         return self.value
+
+
+def SessionId(session_id_string: str) -> SessionIdValue:
+    """Create and validate a session ID value object."""
+    if not session_id_string:
+        raise ValueError("Session ID cannot be empty")
+
+    # Validate UUID format
+    try:
+        uuid.UUID(session_id_string)
+    except ValueError as e:
+        raise ValueError(f"Invalid session ID format: {session_id_string}") from e
+
+    return SessionIdValue(value=session_id_string)
+
+
+def generate_session_id() -> SessionIdValue:
+    """Generate a new session ID."""
+    return SessionId(str(uuid.uuid4()))
+
+
+# For backwards compatibility, add generate method
+SessionIdValue.generate = staticmethod(generate_session_id)

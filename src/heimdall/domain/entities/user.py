@@ -4,6 +4,8 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 
 from ..value_objects import Email, Password, PasswordHash, UserId
+from ..value_objects.password import hash_password, verify_password
+from ..value_objects.user_id import generate_user_id
 from .session import Session
 
 
@@ -26,7 +28,7 @@ class User:
         if not self.is_active:
             raise ValueError("User account is inactive")
 
-        if not self.password_hash.verify(password):
+        if not verify_password(password, self.password_hash):
             raise ValueError("Invalid credentials")
 
         # Update last login time
@@ -40,10 +42,10 @@ class User:
         self, current_password: Password, new_password: Password
     ) -> None:
         """Change user password."""
-        if not self.password_hash.verify(current_password):
+        if not verify_password(current_password, self.password_hash):
             raise ValueError("Current password is incorrect")
 
-        self.password_hash = new_password.hash()
+        self.password_hash = hash_password(new_password)
         self.updated_at = datetime.now(UTC)
 
     def grant_permission(self, permission: str) -> None:
@@ -77,7 +79,7 @@ class User:
     def create(cls, email: Email, password: Password) -> "User":
         """Create a new user."""
         return cls(
-            id=UserId.generate(),
+            id=generate_user_id(),
             email=email,
-            password_hash=password.hash(),
+            password_hash=hash_password(password),
         )

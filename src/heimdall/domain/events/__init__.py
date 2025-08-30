@@ -1,6 +1,6 @@
 """Domain events - Capture important state changes."""
 
-from .base import DomainEvent
+from .base import DomainEvent, DomainEventValue
 from .user_events import (
     UserActivated,
     UserCreated,
@@ -14,6 +14,7 @@ from .user_events import (
 
 __all__ = [
     "DomainEvent",
+    "DomainEventValue",
     "UserActivated",
     "UserCreated",
     "UserDeactivated",

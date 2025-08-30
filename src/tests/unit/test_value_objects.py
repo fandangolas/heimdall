@@ -11,7 +11,12 @@ from heimdall.domain.value_objects import (
     SessionId,
     Token,
     TokenClaims,
+    TokenClaimsFromDict,
     UserId,
+    generate_session_id,
+    generate_user_id,
+    hash_password,
+    verify_password,
 )
 
 
@@ -32,7 +37,7 @@ class TestEmail:
     def test_domain_extraction(self):
         """Test domain extraction."""
         email = Email("user@domain.com")
-        assert email.domain() == "domain.com"
+        assert email.domain == "domain.com"
 
     def test_invalid_email_format(self):
         """Test invalid email formats raise ValueError."""
@@ -63,10 +68,9 @@ class TestPassword:
     def test_password_hashing(self):
         """Test password hashing."""
         password = Password("ValidPass123")
-        hash_obj = password.hash()
-        assert isinstance(hash_obj, PasswordHash)
+        hash_obj = hash_password(password)
         assert hash_obj.value != password.value
-        assert hash_obj.verify(password) is True
+        assert verify_password(password, hash_obj) is True
 
     def test_short_password(self):
         """Test password too short raises ValueError."""
@@ -115,15 +119,15 @@ class TestPasswordHash:
     def test_verify_correct_password(self):
         """Test verifying correct password."""
         password = Password("ValidPass123")
-        hash_obj = password.hash()
-        assert hash_obj.verify(password) is True
+        hash_obj = hash_password(password)
+        assert verify_password(password, hash_obj) is True
 
     def test_verify_incorrect_password(self):
         """Test verifying incorrect password."""
         password = Password("ValidPass123")
         wrong_password = Password("WrongPass456")
-        hash_obj = password.hash()
-        assert hash_obj.verify(wrong_password) is False
+        hash_obj = hash_password(password)
+        assert verify_password(wrong_password, hash_obj) is False
 
     def test_empty_hash(self):
         """Test empty hash raises ValueError."""
@@ -143,7 +147,7 @@ class TestUserId:
 
     def test_generate_new_id(self):
         """Test generating new user ID."""
-        user_id = UserId.generate()
+        user_id = generate_user_id()
         assert len(user_id.value) == 36
         assert user_id.value.count("-") == 4
 
@@ -170,7 +174,7 @@ class TestSessionId:
 
     def test_generate_new_id(self):
         """Test generating new session ID."""
-        session_id = SessionId.generate()
+        session_id = generate_session_id()
         assert len(session_id.value) == 36
         assert session_id.value.count("-") == 4
 
@@ -196,7 +200,7 @@ class TestTokenClaims:
         assert claims.user_id == "user-123"
         assert claims.session_id == "session-456"
         assert claims.email == "test@example.com"
-        assert claims.permissions == []
+        assert claims.permissions == ()
         assert isinstance(claims.issued_at, datetime)
         assert isinstance(claims.expires_at, datetime)
         assert claims.expires_at > claims.issued_at
@@ -277,11 +281,11 @@ class TestTokenClaims:
             "exp": int(expires.timestamp()),
         }
 
-        claims = TokenClaims.from_dict(data)
+        claims = TokenClaimsFromDict(data)
         assert claims.user_id == "user-123"
         assert claims.session_id == "session-456"
         assert claims.email == "test@example.com"
-        assert claims.permissions == ["read", "write"]
+        assert claims.permissions == ("read", "write")
         assert abs((claims.issued_at - now).total_seconds()) < 1
         assert abs((claims.expires_at - expires).total_seconds()) < 1
 
