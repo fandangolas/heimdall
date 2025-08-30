@@ -6,12 +6,12 @@ from typing import Any, Dict
 import uuid
 
 
-@dataclass
 class DomainEvent:
     """Base class for all domain events."""
     
-    event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
-    occurred_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    def __init__(self, **kwargs):
+        self.event_id = kwargs.get('event_id', str(uuid.uuid4()))
+        self.occurred_at = kwargs.get('occurred_at', datetime.now(timezone.utc))
     
     @property
     def event_type(self) -> str:

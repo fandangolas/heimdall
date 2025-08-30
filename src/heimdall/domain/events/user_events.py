@@ -1,7 +1,9 @@
 """User-related domain events."""
 
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from typing import List, Optional
+import uuid
 
 from ..value_objects import Email, UserId, SessionId
 from .base import DomainEvent
@@ -13,6 +15,9 @@ class UserCreated(DomainEvent):
     
     user_id: UserId
     email: Email
+    
+    def __post_init__(self):
+        super().__init__()
 
 
 @dataclass
@@ -22,6 +27,9 @@ class UserLoggedIn(DomainEvent):
     user_id: UserId
     session_id: SessionId
     email: Email
+    
+    def __post_init__(self):
+        super().__init__()
 
 
 @dataclass
@@ -30,6 +38,9 @@ class UserLoggedOut(DomainEvent):
     
     user_id: UserId
     session_id: SessionId
+    
+    def __post_init__(self):
+        super().__init__()
 
 
 @dataclass
@@ -37,6 +48,9 @@ class UserPasswordChanged(DomainEvent):
     """Event raised when a user changes their password."""
     
     user_id: UserId
+    
+    def __post_init__(self):
+        super().__init__()
 
 
 @dataclass
@@ -45,6 +59,9 @@ class UserPermissionGranted(DomainEvent):
     
     user_id: UserId
     permission: str
+    
+    def __post_init__(self):
+        super().__init__()
 
 
 @dataclass
@@ -53,6 +70,9 @@ class UserPermissionRevoked(DomainEvent):
     
     user_id: UserId
     permission: str
+    
+    def __post_init__(self):
+        super().__init__()
 
 
 @dataclass
@@ -61,6 +81,9 @@ class UserDeactivated(DomainEvent):
     
     user_id: UserId
     reason: Optional[str] = None
+    
+    def __post_init__(self):
+        super().__init__()
 
 
 @dataclass
@@ -68,3 +91,6 @@ class UserActivated(DomainEvent):
     """Event raised when a user account is activated."""
     
     user_id: UserId
+    
+    def __post_init__(self):
+        super().__init__()
