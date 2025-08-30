@@ -1,20 +1,21 @@
 """Token validation DTOs."""
 
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass
 class ValidateTokenRequest:
     """Token validation request data."""
+
     token: str
 
 
 @dataclass
 class ValidateTokenResponse:
     """Token validation response data."""
+
     is_valid: bool
-    user_id: Optional[str] = None
-    email: Optional[str] = None
-    permissions: Optional[list[str]] = None
-    error: Optional[str] = None
+    user_id: str | None = None
+    email: str | None = None
+    permissions: list[str] | None = None
+    error: str | None = None

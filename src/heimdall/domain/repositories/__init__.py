@@ -1,7 +1,7 @@
 """Repository interfaces - Abstract data access."""
 
-from .user_repository import UserRepository
-from .session_repository import SessionRepository
 from .event_repository import EventRepository
+from .session_repository import SessionRepository
+from .user_repository import UserRepository
 
-__all__ = ["UserRepository", "SessionRepository", "EventRepository"]
+__all__ = ["EventRepository", "SessionRepository", "UserRepository"]

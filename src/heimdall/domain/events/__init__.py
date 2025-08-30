@@ -2,24 +2,24 @@
 
 from .base import DomainEvent
 from .user_events import (
+    UserActivated,
     UserCreated,
+    UserDeactivated,
     UserLoggedIn,
     UserLoggedOut,
     UserPasswordChanged,
     UserPermissionGranted,
     UserPermissionRevoked,
-    UserDeactivated,
-    UserActivated,
 )
 
 __all__ = [
     "DomainEvent",
+    "UserActivated",
     "UserCreated",
+    "UserDeactivated",
     "UserLoggedIn",
     "UserLoggedOut",
     "UserPasswordChanged",
     "UserPermissionGranted",
     "UserPermissionRevoked",
-    "UserDeactivated",
-    "UserActivated",
 ]

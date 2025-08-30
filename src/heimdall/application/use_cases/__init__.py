@@ -1,13 +1,15 @@
-"""Use cases - Application business rules."""
+"""Use cases - Application business rules (functional approach)."""
 
-from .login_use_case import LoginUseCase
-from .register_use_case import RegisterUseCase
-from .validate_token_use_case import ValidateTokenUseCase
-from .logout_use_case import LogoutUseCase
+from .auth_functions import (
+    login_user,
+    logout_user,
+    register_user,
+    validate_token,
+)
 
 __all__ = [
-    "LoginUseCase",
-    "RegisterUseCase", 
-    "ValidateTokenUseCase",
-    "LogoutUseCase",
+    "login_user",
+    "logout_user",
+    "register_user",
+    "validate_token",
 ]

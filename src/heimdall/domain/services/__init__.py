@@ -1,6 +1,6 @@
 """Domain services - Complex business logic."""
 
-from .token_service import TokenService
 from .event_bus import EventBus
+from .token_service import TokenService
 
-__all__ = ["TokenService", "EventBus"]
+__all__ = ["EventBus", "TokenService"]

@@ -5,7 +5,7 @@ from .token_dto import ValidateTokenRequest, ValidateTokenResponse
 
 __all__ = [
     "LoginRequest",
-    "LoginResponse", 
+    "LoginResponse",
     "RegisterRequest",
     "RegisterResponse",
     "ValidateTokenRequest",

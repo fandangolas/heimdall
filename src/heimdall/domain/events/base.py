@@ -1,22 +1,22 @@
 """Base domain event."""
 
-from datetime import datetime, timezone
-from typing import Any
 import uuid
+from datetime import UTC, datetime
+from typing import Any
 
 
 class DomainEvent:
     """Base class for all domain events."""
-    
+
     def __init__(self, **kwargs):
-        self.event_id = kwargs.get('event_id', str(uuid.uuid4()))
-        self.occurred_at = kwargs.get('occurred_at', datetime.now(timezone.utc))
-    
+        self.event_id = kwargs.get("event_id", str(uuid.uuid4()))
+        self.occurred_at = kwargs.get("occurred_at", datetime.now(UTC))
+
     @property
     def event_type(self) -> str:
         """Get the event type name."""
         return self.__class__.__name__
-    
+
     def to_dict(self) -> dict[str, Any]:
         """Convert event to dictionary for serialization."""
         return {
@@ -25,7 +25,7 @@ class DomainEvent:
             "occurred_at": self.occurred_at.isoformat(),
             "data": self._get_event_data(),
         }
-    
+
     def _get_event_data(self) -> dict[str, Any]:
         """Get event-specific data. Override in subclasses."""
         data = {}

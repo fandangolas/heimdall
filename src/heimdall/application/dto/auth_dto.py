@@ -1,12 +1,12 @@
 """Authentication DTOs."""
 
 from dataclasses import dataclass
-# No typing imports needed - using built-in types
 
 
 @dataclass
 class LoginRequest:
     """Login request data."""
+
     email: str
     password: str
 
@@ -14,14 +14,16 @@ class LoginRequest:
 @dataclass
 class LoginResponse:
     """Login response data."""
+
     access_token: str
     token_type: str = "bearer"
-    expires_in: int = 900  # 15 minutes in seconds
+    expires_in: int = 900  # in seconds
 
 
 @dataclass
 class RegisterRequest:
     """Registration request data."""
+
     email: str
     password: str
 
@@ -29,6 +31,7 @@ class RegisterRequest:
 @dataclass
 class RegisterResponse:
     """Registration response data."""
+
     user_id: str
     email: str
     message: str = "User registered successfully"

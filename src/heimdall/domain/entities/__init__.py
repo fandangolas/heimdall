@@ -1,6 +1,6 @@
 """Domain entities - Business objects with identity."""
 
-from .user import User
 from .session import Session
+from .user import User
 
-__all__ = ["User", "Session"]
+__all__ = ["Session", "User"]

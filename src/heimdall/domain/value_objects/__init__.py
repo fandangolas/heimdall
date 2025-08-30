@@ -2,16 +2,16 @@
 
 from .email import Email
 from .password import Password, PasswordHash
+from .session_id import SessionId
 from .token import Token, TokenClaims
 from .user_id import UserId
-from .session_id import SessionId
 
 __all__ = [
     "Email",
     "Password",
-    "PasswordHash", 
+    "PasswordHash",
+    "SessionId",
     "Token",
     "TokenClaims",
     "UserId",
-    "SessionId",
 ]
