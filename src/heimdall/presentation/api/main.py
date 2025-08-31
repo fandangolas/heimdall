@@ -21,7 +21,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     print("🚀 Heimdall authentication service starting up...")
 
     # Initialize database if using PostgreSQL
-    use_postgres = os.getenv("USE_POSTGRES", "false").lower() == "true"
+    persistence_mode = os.getenv("PERSISTENCE_MODE", "in-memory").lower()
+    use_postgres = persistence_mode == "postgres"
 
     if use_postgres:
         try:
@@ -44,7 +45,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     print("🛑 Heimdall authentication service shutting down...")
 
     # Close database connections if using PostgreSQL
-    if use_postgres:
+    persistence_mode = os.getenv("PERSISTENCE_MODE", "in-memory").lower()
+    if persistence_mode == "postgres":
         try:
             from heimdall.infrastructure.persistence.postgres.database import (
                 close_database,

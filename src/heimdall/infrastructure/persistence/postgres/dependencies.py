@@ -124,27 +124,19 @@ _TOKEN_SERVICE_DEPENDENCY = Depends(get_token_service)
 _EVENT_BUS_DEPENDENCY = Depends(get_event_bus)
 
 
-def get_postgresql_command_dependencies(
-    user_repo=_USER_REPO_DEPENDENCY,
-    session_repo=_WRITE_SESSION_REPO_DEPENDENCY,
-    token_service=_TOKEN_SERVICE_DEPENDENCY,
-    event_bus=_EVENT_BUS_DEPENDENCY,
-) -> CommandDependencies:
+def get_postgresql_command_dependencies() -> CommandDependencies:
     """Create command dependencies with PostgreSQL repositories."""
     return CommandDependencies(
-        user_repository=user_repo,
-        session_repository=session_repo,
-        token_service=token_service,
-        event_bus=event_bus,
+        user_repository=get_postgresql_user_repository(),
+        session_repository=get_postgresql_write_session_repository(),
+        token_service=get_token_service(),
+        event_bus=get_event_bus(),
     )
 
 
-def get_postgresql_query_dependencies(
-    session_repo=_READ_SESSION_REPO_DEPENDENCY,
-    token_service=_TOKEN_SERVICE_DEPENDENCY,
-) -> QueryDependencies:
+def get_postgresql_query_dependencies() -> QueryDependencies:
     """Create query dependencies with PostgreSQL repositories."""
     return QueryDependencies(
-        session_repository=session_repo,
-        token_service=token_service,
+        session_repository=get_postgresql_read_session_repository(),
+        token_service=get_token_service(),
     )

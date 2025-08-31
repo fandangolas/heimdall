@@ -34,12 +34,12 @@ services:
     environment:
       # Database configuration
       DATABASE_URL: postgresql+asyncpg://heimdall_user:${POSTGRES_PASSWORD:-heimdall_secure_password}@postgres:5432/heimdall
+      PERSISTENCE_MODE: ${PERSISTENCE_MODE:-postgres}
       
       # Application settings
       ENVIRONMENT: ${ENVIRONMENT:-development}
       HEIMDALL_VERSION: ${HEIMDALL_VERSION:-1.0.0}
       SECRET_KEY: ${SECRET_KEY:-your-secret-key-here-change-in-production}
-      USE_POSTGRES: ${USE_POSTGRES:-true}
       
       # JWT settings
       JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-jwt-secret-key-here-change-in-production}

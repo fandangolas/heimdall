@@ -1,5 +1,6 @@
 """FastAPI dependency injection setup for CQRS functions."""
 
+import os
 from collections.abc import Callable
 from typing import Any
 from unittest.mock import AsyncMock, Mock
@@ -11,6 +12,17 @@ from heimdall.application.cqrs import curry_cqrs_functions
 from heimdall.application.queries import QueryDependencies
 from heimdall.domain.entities import Session, User
 from heimdall.domain.value_objects import Token, TokenClaims
+
+
+def get_persistence_mode() -> str:
+    """Get persistence mode from environment variable."""
+    return os.getenv("PERSISTENCE_MODE", "in-memory").lower()
+
+
+def should_use_postgres() -> bool:
+    """Check if PostgreSQL should be used based on persistence mode."""
+    persistence_mode = get_persistence_mode()
+    return persistence_mode == "postgres"
 
 # Global in-memory storage for demo/testing (would be replaced with real DB)
 _USERS: dict[str, User] = {}
@@ -159,16 +171,37 @@ def _get_postgresql_dependencies():
         return None, None
 
 
-# Create dependencies for auth functions
-_COMMAND_DEPS_DEPENDENCY = Depends(get_command_dependencies)
-_QUERY_DEPS_DEPENDENCY = Depends(get_query_dependencies)
+def get_dynamic_command_dependencies() -> CommandDependencies:
+    """Get command dependencies based on persistence mode."""
+    if should_use_postgres():
+        postgres_cmd_deps, _ = _get_postgresql_dependencies()
+        if postgres_cmd_deps:
+            return postgres_cmd_deps()
+    # Fallback to mock dependencies
+    return get_command_dependencies()
+
+
+def get_dynamic_query_dependencies() -> QueryDependencies:
+    """Get query dependencies based on persistence mode."""
+    if should_use_postgres():
+        _, postgres_query_deps = _get_postgresql_dependencies()
+        if postgres_query_deps:
+            return postgres_query_deps()
+    # Fallback to mock dependencies  
+    return get_query_dependencies()
+
+
+# Create dependencies for auth functions - these will dynamically select the right backend
+_COMMAND_DEPS_DEPENDENCY = Depends(get_dynamic_command_dependencies)
+_QUERY_DEPS_DEPENDENCY = Depends(get_dynamic_query_dependencies)
 
 
 def get_auth_functions(
     command_deps: CommandDependencies = _COMMAND_DEPS_DEPENDENCY,
     query_deps: QueryDependencies = _QUERY_DEPS_DEPENDENCY,
 ) -> dict[str, Callable[..., Any]]:
-    """Get curried CQRS auth functions."""
-    # For now, keep using the original mock dependencies
-    # PostgreSQL integration will be tested separately
+    """Get curried CQRS auth functions with dynamic backend selection."""
+    persistence_mode = get_persistence_mode()
+    print(f"🔧 Using persistence mode: {persistence_mode}")
+    
     return curry_cqrs_functions(command_deps, query_deps)
