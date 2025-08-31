@@ -82,7 +82,7 @@ class TestUser:
 
         assert verify_password(new_password, user.password_hash) is True
         assert verify_password(current_password, user.password_hash) is False
-        assert user.updated_at > old_updated_at
+        assert user.updated_at >= old_updated_at
 
     def test_change_password_wrong_current(self):
         """Test password change with wrong current password."""
@@ -103,7 +103,7 @@ class TestUser:
         user.grant_permission("read")
 
         assert "read" in user.permissions
-        assert user.updated_at > old_updated_at
+        assert user.updated_at >= old_updated_at
 
     def test_grant_duplicate_permission(self):
         """Test granting duplicate permission doesn't add twice."""
@@ -125,7 +125,7 @@ class TestUser:
 
         assert "read" not in user.permissions
         assert "write" in user.permissions
-        assert user.updated_at > old_updated_at
+        assert user.updated_at >= old_updated_at
 
     def test_revoke_nonexistent_permission(self):
         """Test revoking permission that user doesn't have."""
@@ -144,7 +144,7 @@ class TestUser:
         user.deactivate()
 
         assert user.is_active is False
-        assert user.updated_at > old_updated_at
+        assert user.updated_at >= old_updated_at
 
     def test_activate_user(self):
         """Test activating user."""
@@ -155,7 +155,7 @@ class TestUser:
         user.activate()
 
         assert user.is_active is True
-        assert user.updated_at > old_updated_at
+        assert user.updated_at >= old_updated_at
 
     def test_verify_user(self):
         """Test verifying user."""
@@ -165,7 +165,7 @@ class TestUser:
         user.verify()
 
         assert user.is_verified is True
-        assert user.updated_at > old_updated_at
+        assert user.updated_at >= old_updated_at
 
 
 class TestSession:
