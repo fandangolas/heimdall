@@ -20,6 +20,7 @@ This 1000:1 read/write ratio drove our architectural decisions toward CQRS (Comm
 ### Tech Stack
 - **Python 3.13** - Modern Python with native type hints
 - **FastAPI + AsyncIO** - High-performance web framework
+- **PostgreSQL 16** - Production-grade persistent storage (asyncpg driver)
 - **Clean Architecture** - Clear separation of concerns  
 - **Domain-Driven Design** - Rich domain models
 - **CQRS** - Command Query Responsibility Segregation
@@ -83,7 +84,7 @@ This hybrid approach gives us **immutability where it matters** (value objects, 
 The project follows a phased approach to CQRS adoption:
 
 1. **Phase 1** ✅ - Clean Architecture foundation with DDD
-2. **Phase 2** ✅ - CQRS separation + FastAPI presentation layer
+2. **Phase 2** ✅ - CQRS separation + FastAPI presentation layer + PostgreSQL persistence
 3. **Phase 3** - Redis caching layer for sub-10ms performance
 4. **Phase 4** - Full CQRS with event sourcing  
 5. **Phase 5** - High availability and scaling
@@ -107,11 +108,19 @@ src/
 │   │   ├── cqrs.py      # Unified CQRS facade
 │   │   ├── dto/         # Data Transfer Objects (Functional)
 │   │   └── services/    # Function composition (Functional)
+│   ├── infrastructure/ # External integrations
+│   │   └── persistence/ # Data persistence layer
+│   │       └── postgres/ # PostgreSQL implementation
+│   │           ├── database.py        # Connection management
+│   │           ├── dependencies.py    # PostgreSQL dependencies
+│   │           ├── mappers.py         # Database ↔ domain mapping
+│   │           ├── user_repository.py # User persistence
+│   │           └── session_repository.py # Session persistence
 │   └── presentation/    # Interface adapters
 │       └── api/         # FastAPI application
 │           ├── main.py      # FastAPI app configuration
 │           ├── routes.py    # Authentication endpoints
-│           ├── dependencies.py # Dependency injection
+│           ├── dependencies.py # Dynamic dependency injection
 │           ├── schemas.py   # Pydantic request/response schemas
 │           └── health.py    # Health check endpoints
 └── tests/
@@ -241,15 +250,87 @@ await auth_functions["validate"](token)     # Read operation (99% traffic)
 - ✅ **Testing**: 132 tests with full API integration coverage
 - ✅ **Evolution**: Ready for Redis caching layer in Phase 3
 
+## 🗄️ PostgreSQL Integration (Phase 2.5 Complete)
+
+### Dual Persistence Architecture
+Heimdall supports both in-memory and PostgreSQL persistence modes, controlled by a single environment variable:
+
+```bash
+# Use PostgreSQL for production persistence
+PERSISTENCE_MODE=postgres
+
+# Use in-memory storage for development/testing  
+PERSISTENCE_MODE=in-memory
+```
+
+### Dynamic Dependency Injection
+The application automatically selects the appropriate repositories based on the persistence mode:
+
+```python
+# FastAPI automatically chooses the right backend
+def get_auth_functions(
+    command_deps: CommandDependencies = Depends(get_dynamic_command_dependencies),
+    query_deps: QueryDependencies = Depends(get_dynamic_query_dependencies),
+) -> dict[str, Callable]:
+    persistence_mode = get_persistence_mode()
+    print(f"🔧 Using persistence mode: {persistence_mode}")
+    return curry_cqrs_functions(command_deps, query_deps)
+```
+
+### PostgreSQL Features
+- **Separate CQRS Repositories**: Optimized read/write repository implementations
+- **Connection Pooling**: Efficient asyncpg connection management 
+- **ACID Compliance**: Full transaction support for data consistency
+- **Schema Migrations**: Automated database initialization
+- **Docker Integration**: Complete containerized setup with PostgreSQL 16
+
+### Database Schema
+```sql
+-- Users table with authentication data
+CREATE TABLE users (
+    id UUID PRIMARY KEY,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    status VARCHAR(20) DEFAULT 'active',
+    is_verified BOOLEAN DEFAULT false,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    last_login_at TIMESTAMP
+);
+
+-- Sessions table for token management
+CREATE TABLE sessions (
+    id UUID PRIMARY KEY,
+    user_id UUID NOT NULL REFERENCES users(id),
+    email VARCHAR(255) NOT NULL,
+    permissions TEXT[] DEFAULT '{}',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP,
+    is_active BOOLEAN DEFAULT true
+);
+```
+
+### Configuration
+When using PostgreSQL mode, configure the database connection:
+
+```bash
+# Required for PERSISTENCE_MODE=postgres
+DATABASE_URL=postgresql+asyncpg://user:password@host:5432/database
+PERSISTENCE_MODE=postgres
+```
+
 ## 🛠️ Development Setup
 
 ### Prerequisites
 - Python 3.13.7 (configured via asdf)
-- Poetry (for dependency management when ready)
+- Poetry (for dependency management)
+- Docker & Docker Compose (for PostgreSQL database)
 - PostgreSQL (for production persistence)
 - Redis (for Phase 3 caching layer)
 
 ### Quick Start
+
+#### Using Docker (Recommended)
 ```bash
 # Clone and navigate to project
 cd heimdall

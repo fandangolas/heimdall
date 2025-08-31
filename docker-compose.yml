@@ -1,0 +1,98 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: heimdall-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: heimdall
+      POSTGRES_USER: heimdall_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-heimdall_secure_password}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./migrations/init.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U heimdall_user -d heimdall"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - heimdall-network
+
+  heimdall-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: heimdall-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Database configuration
+      DATABASE_URL: postgresql+asyncpg://heimdall_user:${POSTGRES_PASSWORD:-heimdall_secure_password}@postgres:5432/heimdall
+      PERSISTENCE_MODE: ${PERSISTENCE_MODE:-postgres}
+      
+      # Application settings
+      ENVIRONMENT: ${ENVIRONMENT:-development}
+      HEIMDALL_VERSION: ${HEIMDALL_VERSION:-1.0.0}
+      SECRET_KEY: ${SECRET_KEY:-your-secret-key-here-change-in-production}
+      
+      # JWT settings
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-your-jwt-secret-key-here-change-in-production}
+      JWT_ALGORITHM: ${JWT_ALGORITHM:-HS256}
+      JWT_EXPIRATION_MINUTES: ${JWT_EXPIRATION_MINUTES:-15}
+      
+      # API settings
+      API_HOST: 0.0.0.0
+      API_PORT: 8000
+      API_WORKERS: ${API_WORKERS:-4}
+      
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./src:/app/src:ro
+    networks:
+      - heimdall-network
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Optional: pgAdmin for database management
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: heimdall-pgadmin
+    restart: unless-stopped
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@heimdall.local}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+      PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: 'False'
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin_data:/var/lib/pgadmin
+    networks:
+      - heimdall-network
+    depends_on:
+      - postgres
+    profiles:
+      - tools
+
+volumes:
+  postgres_data:
+    driver: local
+  pgadmin_data:
+    driver: local
+
+networks:
+  heimdall-network:
+    driver: bridge

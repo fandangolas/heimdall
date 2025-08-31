@@ -1,5 +1,6 @@
 """FastAPI dependency injection setup for CQRS functions."""
 
+import os
 from collections.abc import Callable
 from typing import Any
 from unittest.mock import AsyncMock, Mock
@@ -11,6 +12,31 @@ from heimdall.application.cqrs import curry_cqrs_functions
 from heimdall.application.queries import QueryDependencies
 from heimdall.domain.entities import Session, User
 from heimdall.domain.value_objects import Token, TokenClaims
+
+# PostgreSQL imports (available in postgres mode, will gracefully handle missing deps)
+try:
+    from heimdall.infrastructure.persistence.postgres.dependencies import (
+        get_postgresql_command_dependencies,
+        get_postgresql_query_dependencies,
+    )
+
+    POSTGRES_DEPS_AVAILABLE = True
+except ImportError:
+    POSTGRES_DEPS_AVAILABLE = False
+    get_postgresql_command_dependencies = None
+    get_postgresql_query_dependencies = None
+
+
+def get_persistence_mode() -> str:
+    """Get persistence mode from environment variable."""
+    return os.getenv("PERSISTENCE_MODE", "in-memory").lower()
+
+
+def should_use_postgres() -> bool:
+    """Check if PostgreSQL should be used based on persistence mode."""
+    persistence_mode = get_persistence_mode()
+    return persistence_mode == "postgres"
+
 
 # Global in-memory storage for demo/testing (would be replaced with real DB)
 _USERS: dict[str, User] = {}
@@ -113,13 +139,47 @@ def get_session_repository():
     return session_repo
 
 
+# Create module-level Depends objects to avoid B008 warnings
+_USER_REPO_DEPENDENCY = Depends(get_user_repository)
+_SESSION_REPO_DEPENDENCY = Depends(get_session_repository)
+_TOKEN_SERVICE_DEPENDENCY = Depends(get_token_service)
+_EVENT_BUS_DEPENDENCY = Depends(get_event_bus)
+
+
 def get_command_dependencies(
-    user_repo=Depends(get_user_repository),
-    session_repo=Depends(get_session_repository),
-    token_service=Depends(get_token_service),
-    event_bus=Depends(get_event_bus),
+    user_repo=None,
+    session_repo=None,
+    token_service=None,
+    event_bus=None,
 ) -> CommandDependencies:
     """Create command dependencies for write operations."""
+    return CommandDependencies(
+        user_repository=user_repo or get_user_repository(),
+        session_repository=session_repo or get_session_repository(),
+        token_service=token_service or get_token_service(),
+        event_bus=event_bus or get_event_bus(),
+    )
+
+
+def get_query_dependencies(
+    session_repo=None,
+    token_service=None,
+) -> QueryDependencies:
+    """Create query dependencies for read operations (minimal dependencies)."""
+    return QueryDependencies(
+        session_repository=session_repo or get_session_repository(),
+        token_service=token_service or get_token_service(),
+    )
+
+
+# FastAPI versions that use Depends()
+def get_command_dependencies_fastapi(
+    user_repo=_USER_REPO_DEPENDENCY,
+    session_repo=_SESSION_REPO_DEPENDENCY,
+    token_service=_TOKEN_SERVICE_DEPENDENCY,
+    event_bus=_EVENT_BUS_DEPENDENCY,
+) -> CommandDependencies:
+    """FastAPI version that uses Depends() for dependency injection."""
     return CommandDependencies(
         user_repository=user_repo,
         session_repository=session_repo,
@@ -128,20 +188,73 @@ def get_command_dependencies(
     )
 
 
-def get_query_dependencies(
-    session_repo=Depends(get_session_repository),
-    token_service=Depends(get_token_service),
+def get_query_dependencies_fastapi(
+    session_repo=_SESSION_REPO_DEPENDENCY,
+    token_service=_TOKEN_SERVICE_DEPENDENCY,
 ) -> QueryDependencies:
-    """Create query dependencies for read operations (minimal dependencies)."""
+    """FastAPI version that uses Depends() for dependency injection."""
     return QueryDependencies(
         session_repository=session_repo,
         token_service=token_service,
     )
 
 
+def _get_postgresql_dependencies():
+    """Try to get PostgreSQL dependencies."""
+    if POSTGRES_DEPS_AVAILABLE:
+        return get_postgresql_command_dependencies, get_postgresql_query_dependencies
+    return None, None
+
+
+def get_dynamic_command_dependencies() -> CommandDependencies:
+    """Get command dependencies based on persistence mode."""
+    if should_use_postgres():
+        postgres_cmd_deps, _ = _get_postgresql_dependencies()
+        if postgres_cmd_deps:
+            return postgres_cmd_deps()
+    # Fallback to mock dependencies
+    return get_command_dependencies()
+
+
+def get_dynamic_query_dependencies() -> QueryDependencies:
+    """Get query dependencies based on persistence mode."""
+    if should_use_postgres():
+        _, postgres_query_deps = _get_postgresql_dependencies()
+        if postgres_query_deps:
+            return postgres_query_deps()
+    # Fallback to mock dependencies
+    return get_query_dependencies()
+
+
+# Create dependencies for auth functions - dynamically select the right backend
+_COMMAND_DEPS_DEPENDENCY = Depends(get_dynamic_command_dependencies)
+_QUERY_DEPS_DEPENDENCY = Depends(get_dynamic_query_dependencies)
+
+
 def get_auth_functions(
-    command_deps: CommandDependencies = Depends(get_command_dependencies),
-    query_deps: QueryDependencies = Depends(get_query_dependencies),
+    command_deps: CommandDependencies | None = None,
+    query_deps: QueryDependencies | None = None,
 ) -> dict[str, Callable[..., Any]]:
-    """Get curried CQRS auth functions."""
+    """Get curried CQRS auth functions with dynamic backend selection."""
+    persistence_mode = get_persistence_mode()
+    print(f"🔧 Using persistence mode: {persistence_mode}")
+
+    # If dependencies aren't provided, create them directly (for non-FastAPI usage)
+    if command_deps is None:
+        command_deps = get_dynamic_command_dependencies()
+    if query_deps is None:
+        query_deps = get_dynamic_query_dependencies()
+
+    return curry_cqrs_functions(command_deps, query_deps)
+
+
+# FastAPI dependency version that uses Depends()
+def get_auth_functions_fastapi(
+    command_deps: CommandDependencies = _COMMAND_DEPS_DEPENDENCY,
+    query_deps: QueryDependencies = _QUERY_DEPS_DEPENDENCY,
+) -> dict[str, Callable[..., Any]]:
+    """FastAPI version that uses Depends() for dependency injection."""
+    persistence_mode = get_persistence_mode()
+    print(f"🔧 Using persistence mode: {persistence_mode}")
+
     return curry_cqrs_functions(command_deps, query_deps)
