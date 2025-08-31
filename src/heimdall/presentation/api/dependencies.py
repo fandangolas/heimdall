@@ -1,6 +1,5 @@
 """FastAPI dependency injection setup for CQRS functions."""
 
-import os
 from collections.abc import Callable
 from typing import Any
 from unittest.mock import AsyncMock, Mock
@@ -114,11 +113,18 @@ def get_session_repository():
     return session_repo
 
 
+# Create module-level Depends objects to avoid B008 warnings
+_USER_REPO_DEPENDENCY = Depends(get_user_repository)
+_SESSION_REPO_DEPENDENCY = Depends(get_session_repository)
+_TOKEN_SERVICE_DEPENDENCY = Depends(get_token_service)
+_EVENT_BUS_DEPENDENCY = Depends(get_event_bus)
+
+
 def get_command_dependencies(
-    user_repo=Depends(get_user_repository),
-    session_repo=Depends(get_session_repository),
-    token_service=Depends(get_token_service),
-    event_bus=Depends(get_event_bus),
+    user_repo=_USER_REPO_DEPENDENCY,
+    session_repo=_SESSION_REPO_DEPENDENCY,
+    token_service=_TOKEN_SERVICE_DEPENDENCY,
+    event_bus=_EVENT_BUS_DEPENDENCY,
 ) -> CommandDependencies:
     """Create command dependencies for write operations."""
     return CommandDependencies(
@@ -130,8 +136,8 @@ def get_command_dependencies(
 
 
 def get_query_dependencies(
-    session_repo=Depends(get_session_repository),
-    token_service=Depends(get_token_service),
+    session_repo=_SESSION_REPO_DEPENDENCY,
+    token_service=_TOKEN_SERVICE_DEPENDENCY,
 ) -> QueryDependencies:
     """Create query dependencies for read operations (minimal dependencies)."""
     return QueryDependencies(
@@ -147,14 +153,20 @@ def _get_postgresql_dependencies():
             get_postgresql_command_dependencies,
             get_postgresql_query_dependencies,
         )
+
         return get_postgresql_command_dependencies, get_postgresql_query_dependencies
     except ImportError:
         return None, None
 
 
+# Create dependencies for auth functions
+_COMMAND_DEPS_DEPENDENCY = Depends(get_command_dependencies)
+_QUERY_DEPS_DEPENDENCY = Depends(get_query_dependencies)
+
+
 def get_auth_functions(
-    command_deps: CommandDependencies = Depends(get_command_dependencies),
-    query_deps: QueryDependencies = Depends(get_query_dependencies),
+    command_deps: CommandDependencies = _COMMAND_DEPS_DEPENDENCY,
+    query_deps: QueryDependencies = _QUERY_DEPS_DEPENDENCY,
 ) -> dict[str, Callable[..., Any]]:
     """Get curried CQRS auth functions."""
     # For now, keep using the original mock dependencies

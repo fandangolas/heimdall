@@ -22,12 +22,13 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
     # Initialize database if using PostgreSQL
     use_postgres = os.getenv("USE_POSTGRES", "false").lower() == "true"
-    
+
     if use_postgres:
         try:
             from heimdall.infrastructure.persistence.postgres.database import (
-                initialize_database
+                initialize_database,
             )
+
             await initialize_database()
             print("✅ PostgreSQL database connection initialized")
         except ImportError:
@@ -46,8 +47,9 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     if use_postgres:
         try:
             from heimdall.infrastructure.persistence.postgres.database import (
-                close_database
+                close_database,
             )
+
             await close_database()
             print("✅ PostgreSQL database connections closed")
         except Exception as e:
@@ -145,7 +147,7 @@ if __name__ == "__main__":
 
     uvicorn.run(
         "heimdall.presentation.api.main:app",
-        host="0.0.0.0",
+        host="127.0.0.1",  # Bind to localhost only for security
         port=8000,
         reload=True,
         log_level="info",
