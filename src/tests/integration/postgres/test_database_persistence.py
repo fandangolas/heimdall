@@ -195,7 +195,9 @@ class TestPostgreSQLPerformance:
         # Should complete within reasonable time (adjust based on your environment)
         assert elapsed < 30.0  # 30 seconds for 50 users
 
-        print(f"Created 50 users in {elapsed:.2f} seconds ({elapsed/50:.3f}s per user)")
+        print(
+            f"Created 50 users in {elapsed:.2f} seconds ({elapsed / 50:.3f}s per user)"
+        )
 
     @pytest.mark.asyncio
     async def test_token_validation_performance(self):
@@ -229,5 +231,5 @@ class TestPostgreSQLPerformance:
 
         print(
             f"100 token validations in {elapsed:.2f} seconds "
-            f"({elapsed/100:.3f}s per validation)"
+            f"({elapsed / 100:.3f}s per validation)"
         )
