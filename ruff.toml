@@ -34,6 +34,7 @@ ignore = [
     "D107",  # Missing docstring in __init__
     "S101",  # Use of assert (we use asserts in tests)
     "PLR2004", # Magic value used in comparison (sometimes OK)
+    "N802",  # Factory functions (LoginRequest, Email, Password, etc.) use PascalCase
 ]
 
 # Allow fix for all enabled rules (except for a few)

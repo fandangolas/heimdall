@@ -46,15 +46,13 @@ def TokenClaims(
     session_id: str,
     email: str,
     permissions: list[str] | None = None,
-    issued_at: datetime | None = None,
     expires_at: datetime | None = None,
 ) -> TokenClaimsValue:
     """Create token claims with defaults."""
     if permissions is None:
         permissions = []
 
-    if issued_at is None:
-        issued_at = datetime.now(UTC)
+    issued_at = datetime.now(UTC)
 
     if expires_at is None:
         expires_at = issued_at + timedelta(minutes=15)
