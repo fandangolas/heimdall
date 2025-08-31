@@ -13,11 +13,11 @@ help:
 	@echo "  clean             Clean build artifacts and cache"
 	@echo ""
 	@echo "Testing:"
-	@echo "  test              Run unit tests (fast, in-memory, no Docker)"
-	@echo "  test-unit         Run unit tests with in-memory persistence"
-	@echo "  test-integration  Run integration tests with in-memory (no Docker)"
-	@echo "  test-postgres     Run integration tests with PostgreSQL (Docker)"
-	@echo "  test-all          Run all test suites"
+	@echo "  test              Run all test suites (unit + integration, no Docker)"
+	@echo "  test-unit         Run unit tests only (fast, in-memory)"
+	@echo "  test-integration  Run integration tests (in-memory, no Docker)"
+	@echo "  test-postgres     Run PostgreSQL integration tests (Docker)"
+	@echo "  test-all          Run unit + integration tests (no Docker)"
 	@echo ""
 	@echo "Code Quality:"
 	@echo "  lint              Run code linting (ruff)"
@@ -56,7 +56,7 @@ clean:
 	rm -rf dist build test-results htmlcov .coverage coverage.xml 2>/dev/null || true
 
 # Testing
-test: test-unit
+test: test-all
 
 test-unit:
 	@echo "🔬 Running unit tests (in-memory persistence)..."
