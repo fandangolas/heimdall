@@ -13,6 +13,19 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from heimdall.presentation.api.health import router as health_router
 from heimdall.presentation.api.routes import router as auth_router
 
+# PostgreSQL imports (available in all modes, will gracefully handle missing deps)
+try:
+    from heimdall.infrastructure.persistence.postgres.database import (
+        close_database,
+        initialize_database,
+    )
+
+    POSTGRES_AVAILABLE = True
+except ImportError:
+    POSTGRES_AVAILABLE = False
+    initialize_database = None
+    close_database = None
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
@@ -20,8 +33,25 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     # Startup
     print("🚀 Heimdall authentication service starting up...")
 
-    # TODO: Initialize database connections, Redis, etc.
-    # For now using in-memory implementations
+    # Initialize database if using PostgreSQL
+    persistence_mode = os.getenv("PERSISTENCE_MODE", "in-memory").lower()
+    use_postgres = persistence_mode == "postgres"
+
+    if use_postgres:
+        if POSTGRES_AVAILABLE and initialize_database:
+            try:
+                await initialize_database()
+                print("✅ PostgreSQL database connection initialized")
+            except Exception as e:
+                print(
+                    f"⚠️ Failed to initialize database: {e}, "
+                    "using in-memory repositories"
+                )
+        else:
+            print(
+                "⚠️ PostgreSQL dependencies not available, using in-memory repositories"
+            )
+            print("   Install with: pip install asyncpg")
 
     print("✅ Heimdall ready to guard the Bifrost Bridge!")
 
@@ -30,7 +60,14 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     # Shutdown
     print("🛑 Heimdall authentication service shutting down...")
 
-    # TODO: Close database connections, cleanup resources
+    # Close database connections if using PostgreSQL
+    persistence_mode = os.getenv("PERSISTENCE_MODE", "in-memory").lower()
+    if persistence_mode == "postgres" and POSTGRES_AVAILABLE and close_database:
+        try:
+            await close_database()
+            print("✅ PostgreSQL database connections closed")
+        except Exception as e:
+            print(f"⚠️ Error closing database: {e}")
 
     print("✅ Heimdall shutdown complete")
 
@@ -124,7 +161,7 @@ if __name__ == "__main__":
 
     uvicorn.run(
         "heimdall.presentation.api.main:app",
-        host="0.0.0.0",
+        host="127.0.0.1",  # Bind to localhost only for security
         port=8000,
         reload=True,
         log_level="info",
