@@ -3,8 +3,9 @@
 from collections.abc import Callable
 from typing import Any
 
-from .services.auth_service import curry_auth_functions
-from .use_cases.auth_functions import Dependencies
+from .commands import CommandDependencies
+from .cqrs import curry_cqrs_functions
+from .queries import QueryDependencies
 
 
 class Container:
@@ -49,25 +50,19 @@ def create_container() -> Container:
 
 
 def wire_auth_functions(container: Container):
-    """Wire authentication functions with dependencies using partial application."""
-    deps = Dependencies(
-        user_repository=container.get("user_repository"),
-        session_repository=container.get("session_repository"),
+    """Wire authentication functions with CQRS dependencies using partial application."""
+    # Command dependencies - for write operations
+    command_deps = CommandDependencies(
+        user_repository=container.get("write_user_repository"),
+        session_repository=container.get("write_session_repository"),
         token_service=container.get("token_service"),
         event_bus=container.get("event_bus"),
     )
 
-    return curry_auth_functions(deps)
+    # Query dependencies - for read operations
+    query_deps = QueryDependencies(
+        session_repository=container.get("read_session_repository"),
+        token_service=container.get("token_service"),
+    )
 
-
-# Pure functional alternative - compose functions directly
-def compose(*functions):
-    """Compose functions together."""
-    return lambda x: x if not functions else functions[0](compose(*functions[1:])(x))
-
-
-def pipe(value, *functions):
-    """Pipe a value through a series of functions."""
-    for func in functions:
-        value = func(value)
-    return value
+    return curry_cqrs_functions(command_deps, query_deps)

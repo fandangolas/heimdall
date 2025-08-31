@@ -81,7 +81,7 @@ This hybrid approach gives us **immutability where it matters** (value objects, 
 The project follows a phased approach to CQRS adoption:
 
 1. **Phase 1** ✅ - Clean Architecture foundation
-2. **Phase 2** 🔄 - Read/Write model separation
+2. **Phase 2** ✅ - Read/Write model separation (CQRS)
 3. **Phase 3** - Event sourcing for audit trails
 4. **Phase 4** - Distributed caching (Redis)
 5. **Phase 5** - Full CQRS with event streaming
@@ -96,12 +96,16 @@ src/
 │   │   ├── value_objects/  # Email, Password, Token (Functional)
 │   │   ├── events/      # Domain events (Functional)
 │   │   └── repositories/   # Abstract interfaces (OOP)
+│   │       ├── read_repositories.py   # Read-optimized (CQRS)
+│   │       └── write_repositories.py  # Write-optimized (CQRS)
 │   └── application/     # Use cases & orchestration
+│       ├── commands/    # Write operations (CQRS - 1% traffic)
+│       ├── queries/     # Read operations (CQRS - 99% traffic)
+│       ├── cqrs.py      # Unified facade
 │       ├── dto/         # Data Transfer Objects (Functional)
-│       ├── use_cases/   # Pure business functions (Functional)
 │       └── services/    # Function composition (Functional)
 └── tests/
-    └── unit/           # Comprehensive test coverage (73 tests)
+    └── unit/           # Comprehensive test coverage (73+ tests)
 ```
 
 ## 🧪 Testing
@@ -121,10 +125,45 @@ For detailed architectural decisions and trade-offs, see [Technical Assessment](
 ## 🎯 Design Principles
 
 1. **Optimize for the common case** - Token validation is 99% of traffic
-2. **Pure functions over classes** - Easier to test, reason about, and scale
-3. **Immutable value objects** - Thread-safe by default
-4. **Explicit dependencies** - No hidden state or magic
-5. **Progressive complexity** - Start simple, evolve as needed
+2. **CQRS separation** - Different models for reads vs writes  
+3. **Pure functions over classes** - Easier to test, reason about, and scale
+4. **Immutable value objects** - Thread-safe by default
+5. **Explicit dependencies** - No hidden state or magic
+6. **Progressive complexity** - Start simple, evolve as needed
+
+## 🔄 CQRS Implementation (Phase 2)
+
+### Functional CQRS with Curried Functions
+
+```python
+# Create optimized dependencies for commands and queries
+command_deps = CommandDependencies(user_repo, session_repo, token_service, event_bus)
+query_deps = QueryDependencies(cached_session_repo, token_service)  # Minimal deps
+
+# Curry CQRS functions with dependencies baked in
+auth_functions = curry_cqrs_functions(command_deps, query_deps)
+
+# Use the curried functions - dependencies already applied
+await auth_functions["login"](request)      # Write operation (1% traffic)
+await auth_functions["validate"](token)     # Read operation (99% traffic)
+```
+
+### Command Side (Write Operations - 1% of traffic)
+- **Commands**: `login_user_command`, `register_user_command`, `logout_user_command`
+- **Focus**: Data consistency, domain events, full business logic
+- **Dependencies**: Write repositories, event bus, full domain services
+
+### Query Side (Read Operations - 99% of traffic)  
+- **Queries**: `validate_token_query` 
+- **Focus**: Performance optimization, minimal dependencies
+- **Dependencies**: Read repositories (cacheable), token service only
+
+### Benefits Achieved
+- ✅ **Performance**: Read operations use minimal dependencies
+- ✅ **Scalability**: Can scale read/write sides independently  
+- ✅ **Functional**: Pure functions with partial application
+- ✅ **Maintainability**: Clear separation of concerns
+- ✅ **Evolution**: Ready for caching, read replicas, event sourcing
 
 ---
 

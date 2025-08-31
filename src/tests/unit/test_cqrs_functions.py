@@ -1,16 +1,16 @@
-"""Tests for functional use cases."""
+"""Tests for CQRS functional implementation."""
 
 from unittest.mock import AsyncMock, Mock
 
 import pytest
 
-from heimdall.application.dto import LoginRequest, RegisterRequest
-from heimdall.application.use_cases.auth_functions import (
-    Dependencies,
-    login_user,
-    register_user,
-    validate_token,
+from heimdall.application.commands import (
+    CommandDependencies,
+    login_user_command,
+    register_user_command,
 )
+from heimdall.application.dto import LoginRequest, RegisterRequest
+from heimdall.application.queries import QueryDependencies, validate_token_query
 from heimdall.domain.entities import User
 from heimdall.domain.value_objects import (
     Email,
@@ -52,8 +52,8 @@ class TestFunctionalLogin:
         event_bus = AsyncMock()
         event_bus.publish = AsyncMock()
 
-        # Create dependencies
-        deps = Dependencies(
+        # Create command dependencies
+        command_deps = CommandDependencies(
             user_repository=user_repo,
             session_repository=session_repo,
             token_service=token_service,
@@ -61,7 +61,7 @@ class TestFunctionalLogin:
         )
 
         # Act
-        response = await login_user(request, deps)
+        response = await login_user_command(request, command_deps)
 
         # Assert
         assert response.access_token == "fake.jwt.token"
@@ -85,8 +85,8 @@ class TestFunctionalLogin:
         token_service = Mock()
         event_bus = AsyncMock()
 
-        # Create dependencies
-        deps = Dependencies(
+        # Create command dependencies
+        command_deps = CommandDependencies(
             user_repository=user_repo,
             session_repository=session_repo,
             token_service=token_service,
@@ -95,7 +95,7 @@ class TestFunctionalLogin:
 
         # Act & Assert
         with pytest.raises(ValueError, match="Invalid credentials"):
-            await login_user(request, deps)
+            await login_user_command(request, command_deps)
 
 
 class TestFunctionalRegister:
@@ -114,8 +114,8 @@ class TestFunctionalRegister:
         event_bus = AsyncMock()
         event_bus.publish = AsyncMock()
 
-        # Create dependencies
-        deps = Dependencies(
+        # Create command dependencies
+        command_deps = CommandDependencies(
             user_repository=user_repo,
             session_repository=AsyncMock(),  # Not used in register
             token_service=Mock(),  # Not used in register
@@ -123,7 +123,7 @@ class TestFunctionalRegister:
         )
 
         # Act
-        response = await register_user(request, deps)
+        response = await register_user_command(request, command_deps)
 
         # Assert
         assert response.email == "test@example.com"
@@ -143,8 +143,8 @@ class TestFunctionalRegister:
 
         event_bus = AsyncMock()
 
-        # Create dependencies
-        deps = Dependencies(
+        # Create command dependencies
+        command_deps = CommandDependencies(
             user_repository=user_repo,
             session_repository=AsyncMock(),  # Not used in register
             token_service=Mock(),  # Not used in register
@@ -153,7 +153,7 @@ class TestFunctionalRegister:
 
         # Act & Assert
         with pytest.raises(ValueError, match="User with this email already exists"):
-            await register_user(request, deps)
+            await register_user_command(request, command_deps)
 
 
 class TestFunctionalValidateToken:
@@ -181,22 +181,20 @@ class TestFunctionalValidateToken:
         session_repo = AsyncMock()
         session_repo.find_by_id.return_value = session
 
-        # Create dependencies
-        deps = Dependencies(
-            user_repository=AsyncMock(),  # Not used in validate
+        # Create query dependencies (optimized for reads)
+        query_deps = QueryDependencies(
             session_repository=session_repo,
             token_service=token_service,
-            event_bus=AsyncMock(),  # Not used in validate
         )
 
         # Act
-        result = await validate_token(token, deps)
+        result = await validate_token_query(token, query_deps)
 
         # Assert
-        assert result["is_valid"] is True
-        assert result["user_id"] == "user123"
-        assert result["email"] == "test@example.com"
-        assert result["permissions"] == ("read",)
+        assert result.is_valid is True
+        assert result.user_id == "user123"
+        assert result.email == "test@example.com"
+        assert result.permissions == ("read",)
 
     @pytest.mark.asyncio
     async def test_invalid_session(self):
@@ -214,17 +212,15 @@ class TestFunctionalValidateToken:
         session_repo = AsyncMock()
         session_repo.find_by_id.return_value = None
 
-        # Create dependencies
-        deps = Dependencies(
-            user_repository=AsyncMock(),  # Not used in validate
+        # Create query dependencies (optimized for reads)
+        query_deps = QueryDependencies(
             session_repository=session_repo,
             token_service=token_service,
-            event_bus=AsyncMock(),  # Not used in validate
         )
 
         # Act
-        result = await validate_token(token, deps)
+        result = await validate_token_query(token, query_deps)
 
         # Assert
-        assert result["is_valid"] is False
-        assert result["error"] == "Invalid session"
+        assert result.is_valid is False
+        assert result.error == "Invalid session"

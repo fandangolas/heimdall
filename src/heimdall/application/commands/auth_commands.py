@@ -1,29 +1,32 @@
-"""Authentication use case functions."""
+"""Authentication command functions (write operations)."""
 
 from typing import NamedTuple
 
 from ...domain.entities import User
 from ...domain.events import UserCreated, UserLoggedIn, UserLoggedOut
-from ...domain.repositories import SessionRepository, UserRepository
+from ...domain.repositories.write_repositories import (
+    WriteSessionRepository,
+    WriteUserRepository,
+)
 from ...domain.services import EventBus, TokenService
 from ...domain.value_objects import Email, Password, Token
 from ..dto import LoginRequest, LoginResponse, RegisterRequest, RegisterResponse
 
 
 class Dependencies(NamedTuple):
-    """Container for service dependencies."""
+    """Dependencies for command operations (writes)."""
 
-    user_repository: UserRepository
-    session_repository: SessionRepository
+    user_repository: WriteUserRepository
+    session_repository: WriteSessionRepository
     token_service: TokenService
     event_bus: EventBus
 
 
-async def login_user(
+async def login_user_command(
     request: LoginRequest,
     deps: Dependencies,
 ) -> LoginResponse:
-    """Execute user login use case."""
+    """Execute user login command (write operation)."""
     # Parse input
     email = Email(request.email)
     password = Password(request.password)
@@ -45,7 +48,7 @@ async def login_user(
     # Generate token
     token = deps.token_service.generate_token(session)
 
-    # Publish event
+    # Publish event for read model updates
     event = UserLoggedIn(
         user_id=user.id,
         session_id=session.id,
@@ -56,11 +59,11 @@ async def login_user(
     return LoginResponse(access_token=token.value)
 
 
-async def logout_user(
+async def logout_user_command(
     token: Token,
     deps: Dependencies,
 ) -> None:
-    """Execute user logout use case."""
+    """Execute user logout command (write operation)."""
     # Validate and decode token
     claims = deps.token_service.validate_token(token)
 
@@ -80,7 +83,7 @@ async def logout_user(
     session.invalidate()
     await deps.session_repository.save(session)
 
-    # Publish event
+    # Publish event for read model updates
     event = UserLoggedOut(
         user_id=session.user_id,
         session_id=session.id,
@@ -88,40 +91,11 @@ async def logout_user(
     await deps.event_bus.publish(event)
 
 
-async def validate_token(
-    token: Token,
-    deps: Dependencies,
-) -> dict:
-    """Validate token and return user information."""
-    try:
-        # Validate and decode token
-        claims = deps.token_service.validate_token(token)
-
-        # Check if session exists and is valid
-        from ...domain.value_objects import SessionId
-
-        session_id = SessionId(claims.session_id)
-        session = await deps.session_repository.find_by_id(session_id)
-
-        if not session or not session.is_valid():
-            return {"is_valid": False, "error": "Invalid session"}
-
-        return {
-            "is_valid": True,
-            "user_id": claims.user_id,
-            "email": claims.email,
-            "permissions": claims.permissions,
-        }
-
-    except Exception as e:
-        return {"is_valid": False, "error": str(e)}
-
-
-async def register_user(
+async def register_user_command(
     request: RegisterRequest,
     deps: Dependencies,
 ) -> RegisterResponse:
-    """Execute user registration use case."""
+    """Execute user registration command (write operation)."""
     # Parse input
     email = Email(request.email)
     password = Password(request.password)
@@ -136,7 +110,7 @@ async def register_user(
     # Save user
     await deps.user_repository.save(user)
 
-    # Publish event
+    # Publish event for read model updates
     event = UserCreated(user_id=user.id, email=user.email)
     await deps.event_bus.publish(event)
 
