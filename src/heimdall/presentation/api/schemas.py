@@ -1,6 +1,6 @@
 """Pydantic schemas for API request/response validation."""
 
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field
 
 
 class LoginRequestSchema(BaseModel):
@@ -9,10 +9,11 @@ class LoginRequestSchema(BaseModel):
     email: EmailStr = Field(..., description="User email address")
     password: str = Field(..., min_length=8, description="User password")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {"email": "user@example.com", "password": "SecurePassword123"}
         }
+    )
 
 
 class LoginResponseSchema(BaseModel):
@@ -21,13 +22,14 @@ class LoginResponseSchema(BaseModel):
     access_token: str = Field(..., description="JWT access token")
     token_type: str = Field(default="bearer", description="Token type")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
                 "token_type": "bearer",
             }
         }
+    )
 
 
 class RegisterRequestSchema(BaseModel):
@@ -36,10 +38,11 @@ class RegisterRequestSchema(BaseModel):
     email: EmailStr = Field(..., description="User email address")
     password: str = Field(..., min_length=8, description="User password")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {"email": "newuser@example.com", "password": "SecurePassword123"}
         }
+    )
 
 
 class RegisterResponseSchema(BaseModel):
@@ -51,14 +54,15 @@ class RegisterResponseSchema(BaseModel):
         default="User created successfully", description="Success message"
     )
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "user_id": "550e8400-e29b-41d4-a716-446655440000",
                 "email": "newuser@example.com",
                 "message": "User created successfully",
             }
         }
+    )
 
 
 class ValidateTokenRequestSchema(BaseModel):
@@ -66,10 +70,11 @@ class ValidateTokenRequestSchema(BaseModel):
 
     token: str = Field(..., description="JWT token to validate")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {"token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9..."}
         }
+    )
 
 
 class ValidateTokenResponseSchema(BaseModel):
@@ -81,8 +86,8 @@ class ValidateTokenResponseSchema(BaseModel):
     permissions: list[str] = Field(default_factory=list, description="User permissions")
     error: str | None = Field(None, description="Error message if token is invalid")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "is_valid": True,
                 "user_id": "550e8400-e29b-41d4-a716-446655440000",
@@ -91,6 +96,7 @@ class ValidateTokenResponseSchema(BaseModel):
                 "error": None,
             }
         }
+    )
 
 
 class ErrorResponseSchema(BaseModel):
@@ -99,13 +105,14 @@ class ErrorResponseSchema(BaseModel):
     error: str = Field(..., description="Error message")
     detail: str | None = Field(None, description="Additional error details")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "error": "Invalid credentials",
                 "detail": "Email or password is incorrect",
             }
         }
+    )
 
 
 class HealthCheckResponseSchema(BaseModel):
@@ -115,11 +122,12 @@ class HealthCheckResponseSchema(BaseModel):
     timestamp: str = Field(..., description="Current timestamp")
     version: str = Field(..., description="Service version")
 
-    class Config:
-        json_schema_extra = {
+    model_config = ConfigDict(
+        json_schema_extra={
             "example": {
                 "status": "healthy",
                 "timestamp": "2024-01-15T10:30:00Z",
                 "version": "1.0.0",
             }
         }
+    )

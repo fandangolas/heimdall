@@ -15,7 +15,7 @@ class TestCQRSIntegration(IntegrationTestBase):
         """Test that login command creates session that can be validated by query."""
         # Arrange - Create test user using helper
         user = self.create_test_user("test@example.com", "Password123")
-        session = self.create_test_session(user)
+        _session = self.create_test_session(user)  # Setup for testing
 
         # Act 1: Login (command) - creates session
         login_request = LoginRequest(email="test@example.com", password="Password123")
@@ -50,7 +50,7 @@ class TestCQRSIntegration(IntegrationTestBase):
 
         # Act 2: Setup login for registered user
         user = self.factory.db.get_users()["new@example.com"]
-        session = self.create_test_session(user)
+        _session = self.create_test_session(user)  # Setup for testing
 
         login_request = LoginRequest(email="new@example.com", password="Password123")
         login_response = await self.auth_functions["login"](login_request)
@@ -84,8 +84,8 @@ class TestCQRSIntegration(IntegrationTestBase):
         user1 = self.create_test_user("user1@example.com", "Password123")
         user2 = self.create_test_user("user2@example.com", "Password456")
 
-        session1 = self.create_test_session(user1)
-        session2 = self.create_test_session(user2)
+        _session1 = self.create_test_session(user1)  # Setup for testing
+        _session2 = self.create_test_session(user2)  # Setup for testing
 
         # Act - Concurrent logins
         import asyncio

@@ -14,7 +14,7 @@ class TestInfrastructureIsolation(IntegrationTestBase):
     async def test_first_test_creates_state(self):
         """First test creates some state."""
         # Create a user
-        user = self.create_test_user("first@example.com", "Password123")
+        _user = self.create_test_user("first@example.com", "Password123")  # Setup
 
         # Register through the system
         register_request = RegisterRequest(
@@ -43,7 +43,7 @@ class TestInfrastructureIsolation(IntegrationTestBase):
         assert len(events) == 0  # Clean event tracking
 
         # Create new state for this test
-        user = self.create_test_user("second@example.com", "Password456")
+        _user = self.create_test_user("second@example.com", "Password456")  # Setup
         users = self.factory.db.get_users()
         assert len(users) == 1
         assert "second@example.com" in users

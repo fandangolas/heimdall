@@ -40,7 +40,9 @@ def create_app() -> FastAPI:
     # Application metadata
     app = FastAPI(
         title="Heimdall Authentication Service",
-        description="High-performance distributed authentication and authorization system",
+        description=(
+            "High-performance distributed authentication and authorization system"
+        ),
         version=os.getenv("HEIMDALL_VERSION", "1.0.0-dev"),
         docs_url="/docs",
         redoc_url="/redoc",
@@ -96,7 +98,9 @@ def create_app() -> FastAPI:
         return {
             "service": "Heimdall Authentication Service",
             "version": os.getenv("HEIMDALL_VERSION", "1.0.0-dev"),
-            "description": "Guardian of the Bifrost Bridge - High-performance auth for microservices",
+            "description": (
+                "Guardian of the Bifrost Bridge - High-performance auth service"
+            ),
             "docs": "/docs",
             "health": "/health",
             "auth_endpoints": {

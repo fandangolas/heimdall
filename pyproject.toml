@@ -34,3 +34,22 @@ mypy = "^1.17.1"
 httpx = "^0.28.1"
 faker = "^37.6.0"
 
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "B", "I", "N", "S", "UP", "C4", "PT", "RUF", "PLW"]
+ignore = [
+    "N802",  # Factory functions (LoginRequest, etc.) intentionally capitalized
+    "S104",  # Binding to 0.0.0.0 is intentional for containerized apps
+    "S106",  # Hardcoded password detection false positive for "bearer" string
+    "S107",  # Hardcoded password detection false positive for "bearer" token type
+    "B008",  # FastAPI Depends() in function defaults is correct pattern
+    "B904",  # Exception chaining in HTTP exception handlers is optional
+    "PLW0603",  # Global statement needed for mock setup in dependencies
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = ["S101"]  # Allow assert statements in tests
+

@@ -1,7 +1,7 @@
 """Health check endpoints for monitoring and observability."""
 
 import os
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
 from fastapi import APIRouter, Depends
@@ -15,10 +15,13 @@ router = APIRouter(tags=["health"])
 def get_system_info() -> dict[str, Any]:
     """Get basic system information for health checks."""
     return {
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         "version": os.getenv("HEIMDALL_VERSION", "1.0.0-dev"),
         "environment": os.getenv("ENVIRONMENT", "development"),
-        "python_version": f"{os.sys.version_info.major}.{os.sys.version_info.minor}.{os.sys.version_info.micro}",
+        "python_version": (
+            f"{os.sys.version_info.major}.{os.sys.version_info.minor}."
+            f"{os.sys.version_info.micro}"
+        ),
     }
 
 
@@ -88,7 +91,7 @@ async def readiness_check() -> JSONResponse:
     return JSONResponse(
         content={
             "status": "ready",
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         }
     )
 
@@ -104,6 +107,6 @@ async def liveness_check() -> JSONResponse:
     return JSONResponse(
         content={
             "status": "alive",
-            "timestamp": datetime.utcnow().isoformat() + "Z",
+            "timestamp": datetime.now(UTC).isoformat().replace("+00:00", "Z"),
         }
     )

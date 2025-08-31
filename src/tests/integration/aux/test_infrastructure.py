@@ -134,14 +134,14 @@ class TestDependencyFactory:
             self._token_service = Mock()
 
             def generate_token_impl(session):
-                claims = TokenClaims(
+                _claims = TokenClaims(
                     user_id=str(session.user_id),
                     session_id=str(session.id),
                     email=str(session.email),
                     permissions=list(session.permissions)
                     if hasattr(session, "permissions")
                     else [],
-                )
+                )  # For future JWT encoding
                 return Token("jwt.token.generated")
 
             def validate_token_impl(token):

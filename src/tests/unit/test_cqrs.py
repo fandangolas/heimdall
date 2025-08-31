@@ -115,7 +115,7 @@ class TestCQRSFunctional:
 
     @pytest.mark.asyncio
     async def test_curry_cqrs_functions_creates_partial_functions(self):
-        """Test that curry_cqrs_functions creates properly curried functions with CQRS separation."""
+        """Test curry_cqrs_functions creates curried functions with CQRS separation."""
         # Arrange - separate dependencies for commands and queries
         command_deps = CommandDependencies(
             user_repository=AsyncMock(),

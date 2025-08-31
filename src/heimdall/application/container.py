@@ -50,7 +50,7 @@ def create_container() -> Container:
 
 
 def wire_auth_functions(container: Container):
-    """Wire authentication functions with CQRS dependencies using partial application."""
+    """Wire auth functions with CQRS dependencies using partial application."""
     # Command dependencies - for write operations
     command_deps = CommandDependencies(
         user_repository=container.get("write_user_repository"),
