@@ -19,8 +19,10 @@ This 1000:1 read/write ratio drove our architectural decisions toward CQRS (Comm
 
 ### Tech Stack
 - **Python 3.13** - Modern Python with native type hints
-- **Clean Architecture** - Clear separation of concerns
+- **FastAPI + AsyncIO** - High-performance web framework
+- **Clean Architecture** - Clear separation of concerns  
 - **Domain-Driven Design** - Rich domain models
+- **CQRS** - Command Query Responsibility Segregation
 - **Functional Programming** - Pure functions for business logic
 
 ### Key Decisions: Hybrid Functional/OOP Architecture
@@ -80,11 +82,12 @@ This hybrid approach gives us **immutability where it matters** (value objects, 
 
 The project follows a phased approach to CQRS adoption:
 
-1. **Phase 1** ✅ - Clean Architecture foundation
-2. **Phase 2** ✅ - Read/Write model separation (CQRS)
-3. **Phase 3** - Event sourcing for audit trails
-4. **Phase 4** - Distributed caching (Redis)
-5. **Phase 5** - Full CQRS with event streaming
+1. **Phase 1** ✅ - Clean Architecture foundation with DDD
+2. **Phase 2** ✅ - CQRS separation + FastAPI presentation layer
+3. **Phase 3** - Redis caching layer for sub-10ms performance
+4. **Phase 4** - Full CQRS with event sourcing  
+5. **Phase 5** - High availability and scaling
+6. **Phase 6** - Security, integration, and observability
 
 ## 📁 Project Structure
 
@@ -98,25 +101,49 @@ src/
 │   │   └── repositories/   # Abstract interfaces (OOP)
 │   │       ├── read_repositories.py   # Read-optimized (CQRS)
 │   │       └── write_repositories.py  # Write-optimized (CQRS)
-│   └── application/     # Use cases & orchestration
-│       ├── commands/    # Write operations (CQRS - 1% traffic)
-│       ├── queries/     # Read operations (CQRS - 99% traffic)
-│       ├── cqrs.py      # Unified facade
-│       ├── dto/         # Data Transfer Objects (Functional)
-│       └── services/    # Function composition (Functional)
+│   ├── application/     # Use cases & orchestration
+│   │   ├── commands/    # Write operations (CQRS - 1% traffic)
+│   │   ├── queries/     # Read operations (CQRS - 99% traffic)
+│   │   ├── cqrs.py      # Unified CQRS facade
+│   │   ├── dto/         # Data Transfer Objects (Functional)
+│   │   └── services/    # Function composition (Functional)
+│   └── presentation/    # Interface adapters
+│       └── api/         # FastAPI application
+│           ├── main.py      # FastAPI app configuration
+│           ├── routes.py    # Authentication endpoints
+│           ├── dependencies.py # Dependency injection
+│           ├── schemas.py   # Pydantic request/response schemas
+│           └── health.py    # Health check endpoints
 └── tests/
-    └── unit/           # Comprehensive test coverage (73+ tests)
+    ├── unit/           # 87 tests - Domain & CQRS logic
+    └── integration/    # 45 tests - Full-stack API testing
+        ├── aux/        # Test infrastructure
+        └── usecases/   # Organized by CQRS patterns
+            ├── commands/  # Write operation tests
+            └── queries/   # Read operation tests
 ```
 
-## 🧪 Testing
+## 🧪 Testing (132 Total Tests)
 
 ```bash
 # Run all tests
-PYTHONPATH=src python -m pytest
+PYTHONPATH=src python -m pytest src/tests/ -v
+
+# Run unit tests only (87 tests)
+PYTHONPATH=src python -m pytest src/tests/unit/ -v
+
+# Run integration tests only (45 tests)
+PYTHONPATH=src python -m pytest src/tests/integration/ -v
 
 # Run with coverage
 PYTHONPATH=src python -m pytest --cov=heimdall
 ```
+
+### Test Coverage
+- **87 Unit Tests**: Domain entities, CQRS commands/queries, value objects, events
+- **45 Integration Tests**: Full-stack API testing through FastAPI endpoints
+  - Commands: Write operations (login, register) - 1% traffic
+  - Queries: Read operations (token validation, health checks) - 99% traffic
 
 ## 📖 Documentation
 
@@ -130,11 +157,35 @@ For detailed architectural decisions and trade-offs, see [Technical Assessment](
 4. **Immutable value objects** - Thread-safe by default
 5. **Explicit dependencies** - No hidden state or magic
 6. **Progressive complexity** - Start simple, evolve as needed
+7. **API-first design** - Complete FastAPI integration with type safety
+8. **Test-driven architecture** - 132 tests covering all layers
 
-## 🔄 CQRS Implementation (Phase 2)
+## 🔄 CQRS Implementation (Phase 2 Complete)
+
+### Architecture Overview
+Complete command/query separation with FastAPI presentation layer, optimized for the 100:1 read/write ratio typical in authentication systems.
+
+### FastAPI Integration
+```python
+# FastAPI routes with dependency injection
+@router.post("/auth/login")
+async def login(
+    request: LoginRequestSchema,
+    auth_functions: dict = Depends(get_auth_functions)
+) -> LoginResponseSchema:
+    response = await auth_functions["login"](request.to_domain())
+    return LoginResponseSchema.from_domain(response)
+
+@router.post("/auth/validate")
+async def validate_token(
+    request: ValidateTokenRequestSchema,
+    auth_functions: dict = Depends(get_auth_functions)
+) -> ValidateTokenResponseSchema:
+    response = await auth_functions["validate"](request.token)
+    return ValidateTokenResponseSchema.from_domain(response)
+```
 
 ### Functional CQRS with Curried Functions
-
 ```python
 # Create optimized dependencies for commands and queries
 command_deps = CommandDependencies(user_repo, session_repo, token_service, event_bus)
@@ -152,19 +203,54 @@ await auth_functions["validate"](token)     # Read operation (99% traffic)
 - **Commands**: `login_user_command`, `register_user_command`, `logout_user_command`
 - **Focus**: Data consistency, domain events, full business logic
 - **Dependencies**: Write repositories, event bus, full domain services
+- **API Endpoints**: `/auth/login`, `/auth/register`, `/auth/logout`
 
 ### Query Side (Read Operations - 99% of traffic)  
-- **Queries**: `validate_token_query` 
+- **Queries**: `validate_token_query`, `get_user_info_query`
 - **Focus**: Performance optimization, minimal dependencies
 - **Dependencies**: Read repositories (cacheable), token service only
+- **API Endpoints**: `/auth/validate`, `/auth/me`, `/health/*`
 
 ### Benefits Achieved
 - ✅ **Performance**: Read operations use minimal dependencies
 - ✅ **Scalability**: Can scale read/write sides independently  
 - ✅ **Functional**: Pure functions with partial application
+- ✅ **API Integration**: Complete FastAPI presentation layer
+- ✅ **Type Safety**: Pydantic schemas for all request/response boundaries
 - ✅ **Maintainability**: Clear separation of concerns
-- ✅ **Evolution**: Ready for caching, read replicas, event sourcing
+- ✅ **Testing**: 132 tests with full API integration coverage
+- ✅ **Evolution**: Ready for Redis caching layer in Phase 3
+
+## 🛠️ Development Setup
+
+### Prerequisites
+- Python 3.13.7 (configured via asdf)
+- Poetry (for dependency management when ready)
+- PostgreSQL (for production persistence)
+- Redis (for Phase 3 caching layer)
+
+### Quick Start
+```bash
+# Clone and navigate to project
+cd heimdall
+
+# Run all tests to verify setup
+PYTHONPATH=src python -m pytest src/tests/ -v
+
+# Run specific functional use case tests
+PYTHONPATH=src python -m pytest src/tests/unit/test_functional_use_cases.py -v
+
+# Start development server (when Poetry configured)
+poetry run uvicorn heimdall.presentation.api.main:app --reload --host 0.0.0.0 --port 8000
+```
+
+### API Documentation
+Once the server is running:
+- **Swagger UI**: http://localhost:8000/docs
+- **ReDoc**: http://localhost:8000/redoc
+- **OpenAPI Schema**: http://localhost:8000/openapi.json
+- **Health Check**: http://localhost:8000/health
 
 ---
 
-*Part of my portfolio demonstrating Clean Architecture, functional programming, and CQRS patterns in Python.*
+*Part of my portfolio demonstrating Clean Architecture, functional programming, CQRS patterns, and FastAPI integration in Python.*

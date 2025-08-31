@@ -48,30 +48,39 @@
 
 **Status**: All functional/OOP components implemented with full test coverage
 
-### Phase 2: Read/Write Optimization (Simple CQRS) ✅ COMPLETED
-**Goal**: Optimize for 100:1 read/write ratio without full CQRS complexity
-1. **Separate Handlers**: Complete CQRS separation - commands vs queries with different dependencies ✅
+### Phase 2: Read/Write Optimization + FastAPI Presentation Layer ✅ COMPLETED
+**Goal**: Optimize for 100:1 read/write ratio + complete web API implementation
+1. **CQRS Separation**: Complete command/query separation with different dependencies ✅
 2. **Functional Interface**: `curry_cqrs_functions()` providing optimal command/query dispatch ✅  
 3. **Repository Separation**: ReadSessionRepository (minimal) vs WriteUserRepository (full) ✅
 4. **Type-Safe DTOs**: ValidateTokenResponse, LoginResponse, RegisterResponse for boundary safety ✅
+5. **FastAPI Presentation Layer**: Complete API routes with dependency injection ✅
+6. **Integration Tests**: Restructured by CQRS patterns - /commands vs /queries ✅
 
-**Status**: Complete CQRS separation achieved with 95 passing tests, ready for Redis caching layer
+**Status**: Complete CQRS + FastAPI implementation with 132 passing tests (87 unit + 45 integration)
 
-### Phase 3: Full CQRS Implementation
+### Phase 3: Redis Caching Layer
+**Goal**: Sub-10ms token validation performance with distributed caching
+1. **Redis Integration**: Distributed cache for token validation queries
+2. **Cache Strategy**: Cache-aside pattern with TTL-based invalidation
+3. **Performance Optimization**: <10ms p99 response times for token validation
+4. **Fallback Strategy**: Graceful degradation when cache unavailable
+
+### Phase 4: Full CQRS with Event Sourcing
 **Goal**: Complete separation of read/write models for extreme performance
 1. **Separate Models**: Different data models for commands and queries
 2. **Event Sourcing**: Store domain events for audit trail
 3. **Projections**: Pre-computed read models in Redis
 4. **Eventual Consistency**: Handle async updates between write and read sides
 
-### Phase 4: High Availability & Scaling
+### Phase 5: High Availability & Scaling
 **Goal**: Production-ready distributed system
 1. **Read Replicas**: PostgreSQL read replicas for query side
 2. **Redis Cluster**: Distributed caching for high availability
 3. **Horizontal Scaling**: Multiple service instances
 4. **Circuit Breakers**: Resilience patterns for external dependencies
 
-### Phase 5: Security & Integration
+### Phase 6: Security & Integration
 **Goal**: Enterprise-grade security and service integration
 1. **Rate Limiting**: Distributed rate limiting with Redis
 2. **Audit Logging**: Comprehensive security event logging
@@ -85,7 +94,7 @@
 - **Availability**: 99.9% uptime
 - **Memory**: <2GB per instance
 
-## Project Structure (CQRS + Clean Architecture)
+## Project Structure (CQRS + Clean Architecture + FastAPI)
 ```
 heimdall/
 ├── src/
@@ -111,12 +120,19 @@ heimdall/
 │   │   │   ├── messaging/  # Event bus, message broker
 │   │   │   └── config/     # Configuration management
 │   │   └── presentation/   # Interface Adapters
-│   │       ├── api/        # FastAPI routes
-│   │       ├── handlers/   # Request handlers
-│   │       └── schemas/    # Pydantic models
+│   │       └── api/        # FastAPI Application
+│   │           ├── main.py      # FastAPI app configuration
+│   │           ├── routes.py    # Authentication endpoints
+│   │           ├── dependencies.py # Dependency injection
+│   │           ├── schemas.py   # Pydantic request/response schemas
+│   │           └── health.py    # Health check endpoints
 │   └── tests/
-│       ├── unit/           # 95 tests - Domain, commands, queries
-│       ├── integration/    # Hybrid test infrastructure
+│       ├── unit/           # 87 tests - Domain, commands, queries
+│       ├── integration/    # 45 tests - Full-stack API testing
+│       │   ├── aux/        # Test infrastructure (HeimdallAPIClient)
+│       │   └── usecases/   # Organized by CQRS patterns
+│       │       ├── commands/  # Write operation tests (1% traffic)
+│       │       └── queries/   # Read operation tests (99% traffic)
 │       └── e2e/           # End-to-end API tests
 ├── docker/
 ├── migrations/
@@ -130,10 +146,19 @@ heimdall/
 # Python is already configured via asdf (3.13.7)
 python --version  # Should show Python 3.13.7
 
-# When Poetry is set up:
+# Run tests (current setup)
+PYTHONPATH=src python -m pytest src/tests/unit/test_functional_use_cases.py -v  # Unit tests
+PYTHONPATH=src python -m pytest src/tests/ -v  # All tests (132 total)
+
+# Run development server (when ready)
 poetry install    # Install dependencies
-poetry run pytest # Run tests
-poetry run uvicorn heimdall.api.main:app --reload  # Run dev server
+poetry run uvicorn heimdall.presentation.api.main:app --reload --host 0.0.0.0 --port 8000
+
+# API Endpoints (when server running)
+curl http://localhost:8000/                    # Service discovery
+curl http://localhost:8000/health              # Health check
+curl http://localhost:8000/docs                # Swagger UI
+curl http://localhost:8000/redoc               # ReDoc documentation
 
 # Docker commands (when configured):
 docker-compose up -d     # Start services
@@ -166,16 +191,20 @@ docker-compose logs -f  # View logs
 
 ### Progressive CQRS Adoption ✅ Phase 2 Complete
 1. **Phase 1**: Clean Architecture + DDD foundation ✅
-2. **Phase 2**: CQRS separation with functional interface ✅  
-3. **Phase 3**: Add Redis caching layer for reads (next)
-4. **Phase 4**: Separate read/write models  
-5. **Phase 5**: Full event sourcing and projections
+2. **Phase 2**: CQRS separation + FastAPI presentation layer ✅  
+3. **Phase 3**: Add Redis caching layer for sub-10ms performance (next)
+4. **Phase 4**: Full CQRS with separate read/write models
+5. **Phase 5**: Event sourcing and projections
+6. **Phase 6**: High availability and scaling
 
-## Testing Strategy
-- **Unit Tests**: Core business logic, event handlers
-- **Integration Tests**: Database operations, cache operations
-- **Load Tests**: Validate performance requirements
-- **Security Tests**: Authentication flows, rate limiting
+## Testing Strategy (132 Total Tests)
+- **Unit Tests**: 87 tests - Core business logic, CQRS commands/queries, domain entities
+- **Integration Tests**: 45 tests - Full-stack API testing through FastAPI endpoints
+  - **Commands**: Write operations (login, register, logout) - 1% traffic
+  - **Queries**: Read operations (token validation, health checks) - 99% traffic
+  - **Service Discovery**: API documentation and endpoint discovery
+- **Load Tests**: Validate performance requirements (token validation <100ms)
+- **Security Tests**: Authentication flows, input validation, rate limiting
 
 ## Security Considerations
 - JWT tokens with short expiration (15 minutes)

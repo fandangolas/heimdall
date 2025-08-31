@@ -4,7 +4,7 @@ import pytest
 
 from heimdall.application.dto import RegisterRequest
 from heimdall.domain.value_objects import Email
-from tests.integration.test_infrastructure import IntegrationTestBase
+from tests.integration.aux.test_infrastructure import IntegrationTestBase
 
 
 class TestInfrastructureIsolation(IntegrationTestBase):

@@ -4,7 +4,7 @@ import pytest
 
 from heimdall.application.dto import LoginRequest, RegisterRequest
 from heimdall.domain.value_objects import Token
-from tests.integration.test_infrastructure import IntegrationTestBase
+from tests.integration.aux.test_infrastructure import IntegrationTestBase
 
 
 class TestCQRSIntegration(IntegrationTestBase):
