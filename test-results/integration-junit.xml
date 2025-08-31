@@ -1,0 +1,286 @@
+<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="5" failures="0" skipped="0" tests="5" time="1.261" timestamp="2025-08-31T04:11:20.782371+00:00" hostname="b656eaf3ad13"><testcase classname="" name="src.tests.integration.usecases.commands.test_user_login" time="0.000"><error message="collection failure">ImportError while importing test module '/app/src/tests/integration/usecases/commands/test_user_login.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/local/lib/python3.13/site-packages/pydantic/networks.py:946: in import_email_validator
+    import email_validator
+E   ModuleNotFoundError: No module named 'email_validator'
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/silveira.nic/dev/personal/python/heimdall/src/tests/integration/usecases/commands/test_user_login.py:3: in &lt;module&gt;
+    ???
+/Users/silveira.nic/dev/personal/python/heimdall/src/tests/integration/aux/base_test.py:5: in &lt;module&gt;
+    ???
+src/tests/integration/aux/api_client.py:5: in &lt;module&gt;
+    from heimdall.presentation.api.main import app
+src/heimdall/presentation/api/main.py:13: in &lt;module&gt;
+    from heimdall.presentation.api.health import router as health_router
+src/heimdall/presentation/api/health.py:10: in &lt;module&gt;
+    from heimdall.presentation.api.schemas import HealthCheckResponseSchema
+src/heimdall/presentation/api/schemas.py:6: in &lt;module&gt;
+    class LoginRequestSchema(BaseModel):
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_model_construction.py:237: in __new__
+    complete_model_class(
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_model_construction.py:597: in complete_model_class
+    schema = gen_schema.generate_schema(cls)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:711: in generate_schema
+    schema = self._generate_schema_inner(obj)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:1004: in _generate_schema_inner
+    return self._model_schema(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:837: in _model_schema
+    {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:1206: in _generate_md_field_schema
+    common_field = self._common_field_schema(name, field_info, decorators)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:1372: in _common_field_schema
+    schema = self._apply_annotations(
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:2297: in _apply_annotations
+    schema = get_inner_schema(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_schema_generation_shared.py:83: in __call__
+    schema = self._handler(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:2276: in inner_handler
+    schema = self._generate_schema_from_get_schema_method(obj, source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:900: in _generate_schema_from_get_schema_method
+    schema = get_schema(
+/usr/local/lib/python3.13/site-packages/pydantic/networks.py:986: in __get_pydantic_core_schema__
+    import_email_validator()
+/usr/local/lib/python3.13/site-packages/pydantic/networks.py:948: in import_email_validator
+    raise ImportError('email-validator is not installed, run `pip install pydantic[email]`') from e
+E   ImportError: email-validator is not installed, run `pip install pydantic[email]`</error></testcase><testcase classname="" name="src.tests.integration.usecases.commands.test_user_registration" time="0.000"><error message="collection failure">ImportError while importing test module '/app/src/tests/integration/usecases/commands/test_user_registration.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/local/lib/python3.13/site-packages/pydantic/networks.py:946: in import_email_validator
+    import email_validator
+E   ModuleNotFoundError: No module named 'email_validator'
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/silveira.nic/dev/personal/python/heimdall/src/tests/integration/usecases/commands/test_user_registration.py:3: in &lt;module&gt;
+    ???
+/Users/silveira.nic/dev/personal/python/heimdall/src/tests/integration/aux/base_test.py:5: in &lt;module&gt;
+    ???
+src/tests/integration/aux/api_client.py:5: in &lt;module&gt;
+    from heimdall.presentation.api.main import app
+src/heimdall/presentation/api/main.py:13: in &lt;module&gt;
+    from heimdall.presentation.api.health import router as health_router
+src/heimdall/presentation/api/health.py:10: in &lt;module&gt;
+    from heimdall.presentation.api.schemas import HealthCheckResponseSchema
+src/heimdall/presentation/api/schemas.py:6: in &lt;module&gt;
+    class LoginRequestSchema(BaseModel):
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_model_construction.py:237: in __new__
+    complete_model_class(
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_model_construction.py:597: in complete_model_class
+    schema = gen_schema.generate_schema(cls)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:711: in generate_schema
+    schema = self._generate_schema_inner(obj)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:1004: in _generate_schema_inner
+    return self._model_schema(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:837: in _model_schema
+    {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:1206: in _generate_md_field_schema
+    common_field = self._common_field_schema(name, field_info, decorators)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:1372: in _common_field_schema
+    schema = self._apply_annotations(
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:2297: in _apply_annotations
+    schema = get_inner_schema(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_schema_generation_shared.py:83: in __call__
+    schema = self._handler(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:2276: in inner_handler
+    schema = self._generate_schema_from_get_schema_method(obj, source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:900: in _generate_schema_from_get_schema_method
+    schema = get_schema(
+/usr/local/lib/python3.13/site-packages/pydantic/networks.py:986: in __get_pydantic_core_schema__
+    import_email_validator()
+/usr/local/lib/python3.13/site-packages/pydantic/networks.py:948: in import_email_validator
+    raise ImportError('email-validator is not installed, run `pip install pydantic[email]`') from e
+E   ImportError: email-validator is not installed, run `pip install pydantic[email]`</error></testcase><testcase classname="" name="src.tests.integration.usecases.queries.test_health_checks" time="0.000"><error message="collection failure">ImportError while importing test module '/app/src/tests/integration/usecases/queries/test_health_checks.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/local/lib/python3.13/site-packages/pydantic/networks.py:946: in import_email_validator
+    import email_validator
+E   ModuleNotFoundError: No module named 'email_validator'
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/silveira.nic/dev/personal/python/heimdall/src/tests/integration/usecases/queries/test_health_checks.py:3: in &lt;module&gt;
+    ???
+/Users/silveira.nic/dev/personal/python/heimdall/src/tests/integration/aux/base_test.py:5: in &lt;module&gt;
+    ???
+src/tests/integration/aux/api_client.py:5: in &lt;module&gt;
+    from heimdall.presentation.api.main import app
+src/heimdall/presentation/api/main.py:13: in &lt;module&gt;
+    from heimdall.presentation.api.health import router as health_router
+src/heimdall/presentation/api/health.py:10: in &lt;module&gt;
+    from heimdall.presentation.api.schemas import HealthCheckResponseSchema
+src/heimdall/presentation/api/schemas.py:6: in &lt;module&gt;
+    class LoginRequestSchema(BaseModel):
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_model_construction.py:237: in __new__
+    complete_model_class(
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_model_construction.py:597: in complete_model_class
+    schema = gen_schema.generate_schema(cls)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:711: in generate_schema
+    schema = self._generate_schema_inner(obj)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:1004: in _generate_schema_inner
+    return self._model_schema(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:837: in _model_schema
+    {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:1206: in _generate_md_field_schema
+    common_field = self._common_field_schema(name, field_info, decorators)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:1372: in _common_field_schema
+    schema = self._apply_annotations(
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:2297: in _apply_annotations
+    schema = get_inner_schema(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_schema_generation_shared.py:83: in __call__
+    schema = self._handler(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:2276: in inner_handler
+    schema = self._generate_schema_from_get_schema_method(obj, source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:900: in _generate_schema_from_get_schema_method
+    schema = get_schema(
+/usr/local/lib/python3.13/site-packages/pydantic/networks.py:986: in __get_pydantic_core_schema__
+    import_email_validator()
+/usr/local/lib/python3.13/site-packages/pydantic/networks.py:948: in import_email_validator
+    raise ImportError('email-validator is not installed, run `pip install pydantic[email]`') from e
+E   ImportError: email-validator is not installed, run `pip install pydantic[email]`</error></testcase><testcase classname="" name="src.tests.integration.usecases.queries.test_service_discovery" time="0.000"><error message="collection failure">ImportError while importing test module '/app/src/tests/integration/usecases/queries/test_service_discovery.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/local/lib/python3.13/site-packages/pydantic/networks.py:946: in import_email_validator
+    import email_validator
+E   ModuleNotFoundError: No module named 'email_validator'
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/silveira.nic/dev/personal/python/heimdall/src/tests/integration/usecases/queries/test_service_discovery.py:3: in &lt;module&gt;
+    ???
+/Users/silveira.nic/dev/personal/python/heimdall/src/tests/integration/aux/base_test.py:5: in &lt;module&gt;
+    ???
+src/tests/integration/aux/api_client.py:5: in &lt;module&gt;
+    from heimdall.presentation.api.main import app
+src/heimdall/presentation/api/main.py:13: in &lt;module&gt;
+    from heimdall.presentation.api.health import router as health_router
+src/heimdall/presentation/api/health.py:10: in &lt;module&gt;
+    from heimdall.presentation.api.schemas import HealthCheckResponseSchema
+src/heimdall/presentation/api/schemas.py:6: in &lt;module&gt;
+    class LoginRequestSchema(BaseModel):
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_model_construction.py:237: in __new__
+    complete_model_class(
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_model_construction.py:597: in complete_model_class
+    schema = gen_schema.generate_schema(cls)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:711: in generate_schema
+    schema = self._generate_schema_inner(obj)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:1004: in _generate_schema_inner
+    return self._model_schema(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:837: in _model_schema
+    {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:1206: in _generate_md_field_schema
+    common_field = self._common_field_schema(name, field_info, decorators)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:1372: in _common_field_schema
+    schema = self._apply_annotations(
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:2297: in _apply_annotations
+    schema = get_inner_schema(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_schema_generation_shared.py:83: in __call__
+    schema = self._handler(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:2276: in inner_handler
+    schema = self._generate_schema_from_get_schema_method(obj, source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:900: in _generate_schema_from_get_schema_method
+    schema = get_schema(
+/usr/local/lib/python3.13/site-packages/pydantic/networks.py:986: in __get_pydantic_core_schema__
+    import_email_validator()
+/usr/local/lib/python3.13/site-packages/pydantic/networks.py:948: in import_email_validator
+    raise ImportError('email-validator is not installed, run `pip install pydantic[email]`') from e
+E   ImportError: email-validator is not installed, run `pip install pydantic[email]`</error></testcase><testcase classname="" name="src.tests.integration.usecases.queries.test_token_validation" time="0.000"><error message="collection failure">ImportError while importing test module '/app/src/tests/integration/usecases/queries/test_token_validation.py'.
+Hint: make sure your test modules/packages have valid Python names.
+Traceback:
+/usr/local/lib/python3.13/site-packages/pydantic/networks.py:946: in import_email_validator
+    import email_validator
+E   ModuleNotFoundError: No module named 'email_validator'
+
+The above exception was the direct cause of the following exception:
+/usr/local/lib/python3.13/importlib/__init__.py:88: in import_module
+    return _bootstrap._gcd_import(name[level:], package, level)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/Users/silveira.nic/dev/personal/python/heimdall/src/tests/integration/usecases/queries/test_token_validation.py:3: in &lt;module&gt;
+    ???
+/Users/silveira.nic/dev/personal/python/heimdall/src/tests/integration/aux/base_test.py:5: in &lt;module&gt;
+    ???
+src/tests/integration/aux/api_client.py:5: in &lt;module&gt;
+    from heimdall.presentation.api.main import app
+src/heimdall/presentation/api/main.py:13: in &lt;module&gt;
+    from heimdall.presentation.api.health import router as health_router
+src/heimdall/presentation/api/health.py:10: in &lt;module&gt;
+    from heimdall.presentation.api.schemas import HealthCheckResponseSchema
+src/heimdall/presentation/api/schemas.py:6: in &lt;module&gt;
+    class LoginRequestSchema(BaseModel):
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_model_construction.py:237: in __new__
+    complete_model_class(
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_model_construction.py:597: in complete_model_class
+    schema = gen_schema.generate_schema(cls)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:711: in generate_schema
+    schema = self._generate_schema_inner(obj)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:1004: in _generate_schema_inner
+    return self._model_schema(obj)
+           ^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:837: in _model_schema
+    {k: self._generate_md_field_schema(k, v, decorators) for k, v in fields.items()},
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:1206: in _generate_md_field_schema
+    common_field = self._common_field_schema(name, field_info, decorators)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:1372: in _common_field_schema
+    schema = self._apply_annotations(
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:2297: in _apply_annotations
+    schema = get_inner_schema(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_schema_generation_shared.py:83: in __call__
+    schema = self._handler(source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:2276: in inner_handler
+    schema = self._generate_schema_from_get_schema_method(obj, source_type)
+             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/usr/local/lib/python3.13/site-packages/pydantic/_internal/_generate_schema.py:900: in _generate_schema_from_get_schema_method
+    schema = get_schema(
+/usr/local/lib/python3.13/site-packages/pydantic/networks.py:986: in __get_pydantic_core_schema__
+    import_email_validator()
+/usr/local/lib/python3.13/site-packages/pydantic/networks.py:948: in import_email_validator
+    raise ImportError('email-validator is not installed, run `pip install pydantic[email]`') from e
+E   ImportError: email-validator is not installed, run `pip install pydantic[email]`</error></testcase></testsuite></testsuites>

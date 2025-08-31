@@ -29,13 +29,13 @@ class PasswordHashValue(NamedTuple):
 
 def Password(password_string: str) -> PasswordValue:
     """Create and validate a password value object."""
-    MIN_LENGTH = 8
+    min_length = 8
 
     if not password_string:
         raise ValueError("Password cannot be empty")
 
-    if len(password_string) < MIN_LENGTH:
-        raise ValueError(f"Password must be at least {MIN_LENGTH} characters long")
+    if len(password_string) < min_length:
+        raise ValueError(f"Password must be at least {min_length} characters long")
 
     # Check for at least one uppercase, one lowercase, one digit
     has_upper = any(c.isupper() for c in password_string)
