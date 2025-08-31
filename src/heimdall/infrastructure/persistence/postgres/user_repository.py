@@ -1,13 +1,13 @@
 """PostgreSQL implementation of user repositories."""
 
 import uuid
-from typing import Any
 
 from heimdall.domain.entities import User
 from heimdall.domain.repositories.write_repositories import WriteUserRepository
-from heimdall.domain.value_objects import Email, PasswordHash, UserId
+from heimdall.domain.value_objects import Email, UserId
 
 from .database import DatabaseManager
+from .mappers import row_to_user, user_to_db_params
 
 
 class PostgreSQLUserRepository(WriteUserRepository):
@@ -31,7 +31,7 @@ class PostgreSQLUserRepository(WriteUserRepository):
         if not row:
             return None
 
-        return self._row_to_user(row)
+        return row_to_user(row)
 
     async def exists_by_email(self, email: Email) -> bool:
         """Check if user exists by email."""
@@ -57,15 +57,18 @@ class PostgreSQLUserRepository(WriteUserRepository):
         if not row:
             return None
 
-        return self._row_to_user(row)
+        return row_to_user(row)
 
     async def save(self, user: User) -> None:
         """Save user (create or update)."""
         # Check if user exists
         exists_query = "SELECT EXISTS(SELECT 1 FROM users WHERE id = $1)"
 
+        # Use pure function to get database parameters
+        db_params = user_to_db_params(user)
+
         async with self.db_manager.get_connection() as conn:
-            exists = await conn.fetchval(exists_query, uuid.UUID(str(user.id)))
+            exists = await conn.fetchval(exists_query, uuid.UUID(db_params["id"]))
 
             if exists:
                 # Update existing user
@@ -75,16 +78,14 @@ class PostgreSQLUserRepository(WriteUserRepository):
                     is_verified = $5, last_login_at = $6, updated_at = CURRENT_TIMESTAMP
                 WHERE id = $1
                 """
-                # Map domain entity to database schema
-                status = "active" if user.is_active else "inactive"
                 await conn.execute(
                     update_query,
-                    uuid.UUID(str(user.id)),
-                    str(user.email),
-                    user.password_hash.value,
-                    status,
-                    user.is_verified,
-                    user.last_login_at,
+                    uuid.UUID(db_params["id"]),
+                    db_params["email"],
+                    db_params["password_hash"],
+                    db_params["status"],
+                    db_params["is_verified"],
+                    db_params["last_login_at"],
                 )
             else:
                 # Insert new user
@@ -93,31 +94,14 @@ class PostgreSQLUserRepository(WriteUserRepository):
                                  created_at, updated_at, last_login_at)
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
                 """
-                # Map domain entity to database schema
-                status = "active" if user.is_active else "inactive"
                 await conn.execute(
                     insert_query,
-                    uuid.UUID(str(user.id)),
-                    str(user.email),
-                    user.password_hash.value,
-                    status,
-                    user.is_verified,
-                    user.created_at,
-                    user.updated_at,
-                    user.last_login_at,
+                    uuid.UUID(db_params["id"]),
+                    db_params["email"],
+                    db_params["password_hash"],
+                    db_params["status"],
+                    db_params["is_verified"],
+                    db_params["created_at"],
+                    db_params["updated_at"],
+                    db_params["last_login_at"],
                 )
-
-    def _row_to_user(self, row: dict[str, Any]) -> User:
-        """Convert database row to User entity."""
-        # Map database schema to domain entity
-        is_active = row["status"] == "active"
-        return User(
-            id=UserId(str(row["id"])),
-            email=Email(row["email"]),
-            password_hash=PasswordHash(row["password_hash"]),
-            is_active=is_active,
-            is_verified=row["is_verified"],
-            created_at=row["created_at"],
-            updated_at=row["updated_at"],
-            last_login_at=row["last_login_at"],
-        )

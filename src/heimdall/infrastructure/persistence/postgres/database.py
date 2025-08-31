@@ -2,31 +2,34 @@
 
 import os
 from contextlib import asynccontextmanager
+from dataclasses import dataclass
 
 from asyncpg import Pool, create_pool
 
 
+@dataclass(frozen=True)
 class DatabaseConfig:
-    """Database configuration from environment variables."""
+    """Immutable database configuration."""
 
-    @classmethod
-    def from_env(cls):
-        """Create database config from environment variables."""
-        database_url = os.getenv(
-            "DATABASE_URL",
-            "postgresql+asyncpg://heimdall_user:heimdall_secure_password@localhost:5432/heimdall",
-        )
+    database_url: str
 
-        # Remove the +asyncpg part if present
-        if "+asyncpg" in database_url:
-            database_url = database_url.replace(
-                "postgresql+asyncpg://", "postgresql://"
-            )
 
-        return cls(database_url)
+def create_database_config() -> DatabaseConfig:
+    """Pure function to create database config from environment.
 
-    def __init__(self, database_url: str):
-        self.database_url = database_url
+    Returns:
+        Immutable DatabaseConfig instance
+    """
+    database_url = os.getenv(
+        "DATABASE_URL",
+        "postgresql+asyncpg://heimdall_user:heimdall_secure_password@localhost:5432/heimdall",
+    )
+
+    # Remove the +asyncpg part if present
+    if "+asyncpg" in database_url:
+        database_url = database_url.replace("postgresql+asyncpg://", "postgresql://")
+
+    return DatabaseConfig(database_url=database_url)
 
 
 class DatabaseManager:
@@ -82,7 +85,7 @@ class _DatabaseManagerSingleton:
     def get_manager(self) -> DatabaseManager:
         """Get or create the database manager."""
         if self._instance is None:
-            config = DatabaseConfig.from_env()
+            config = create_database_config()
             self._instance = DatabaseManager(config)
         return self._instance
 

@@ -13,10 +13,11 @@ help:
 	@echo "  clean             Clean build artifacts and cache"
 	@echo ""
 	@echo "Testing:"
-	@echo "  test              Run unit tests (fast)"
-	@echo "  test-unit         Run unit tests only"
-	@echo "  test-integration  Run integration tests with mocks"
-	@echo "  test-postgres     Run PostgreSQL integration tests (requires Docker)"
+	@echo "  test              Run unit tests (fast, in-memory)"
+	@echo "  test-unit         Run unit tests with in-memory persistence"
+	@echo "  test-integration  Run integration tests with in-memory persistence"
+	@echo "  test-postgres     Run PostgreSQL integration tests (requires db-up)"
+	@echo "  test-postgres-setup  Run PostgreSQL tests with automatic setup"
 	@echo "  test-all          Run all test suites"
 	@echo ""
 	@echo "Docker:"
@@ -47,15 +48,20 @@ clean:
 test: test-unit
 
 test-unit:
-	@echo "🔬 Running unit tests..."
-	./scripts/test-local.sh unit
+	@echo "🔬 Running unit tests (in-memory persistence)..."
+	PYTHONPATH=src python -m pytest src/tests/unit/ -v --tb=short
 
 test-integration:
-	@echo "🔗 Running integration tests (mocks)..."
-	./scripts/test-local.sh integration
+	@echo "🔗 Running integration tests (in-memory persistence)..."
+	PERSISTENCE_MODE=in-memory PYTHONPATH=src python -m pytest src/tests/integration/usecases/ src/tests/integration/aux/ -v --tb=short
 
 test-postgres:
 	@echo "🐘 Running PostgreSQL integration tests..."
+	@echo "📋 Prerequisites: Docker running, 'make db-up' executed"
+	PERSISTENCE_MODE=postgres PYTHONPATH=src python -m pytest -c pytest-integration.ini --tb=short
+
+test-postgres-setup:
+	@echo "🐘 Running PostgreSQL integration tests with setup..."
 	./scripts/test-postgres-working.sh
 
 test-all:

@@ -1,14 +1,14 @@
 """PostgreSQL implementation of session repositories."""
 
 import uuid
-from typing import Any
 
 from heimdall.domain.entities import Session
 from heimdall.domain.repositories.read_repositories import ReadSessionRepository
 from heimdall.domain.repositories.write_repositories import WriteSessionRepository
-from heimdall.domain.value_objects import Email, SessionId, UserId
+from heimdall.domain.value_objects import SessionId
 
 from .database import DatabaseManager
+from .mappers import row_to_session, session_to_db_params
 
 
 class PostgreSQLWriteSessionRepository(WriteSessionRepository):
@@ -33,7 +33,7 @@ class PostgreSQLWriteSessionRepository(WriteSessionRepository):
         if not row:
             return None
 
-        return self._row_to_session(row)
+        return row_to_session(row)
 
     async def save(self, session: Session) -> None:
         """Save session (create or update)."""
@@ -47,39 +47,19 @@ class PostgreSQLWriteSessionRepository(WriteSessionRepository):
             expires_at = EXCLUDED.expires_at
         """
 
-        # Map domain entity to database schema
-        status = "active" if session.is_active else "invalidated"
-        # Generate a simple token hash for the session
-        # (in real implementation, this would be the JWT hash)
-        token_hash = f"hash_{session.id}_{session.user_id}"
+        # Use pure function to get database parameters
+        db_params = session_to_db_params(session)
 
         async with self.db_manager.get_connection() as conn:
             await conn.execute(
                 insert_query,
-                uuid.UUID(str(session.id)),
-                uuid.UUID(str(session.user_id)),
-                session.created_at,
-                session.expires_at,
-                status,
-                token_hash,
+                uuid.UUID(db_params["id"]),
+                uuid.UUID(db_params["user_id"]),
+                db_params["created_at"],
+                db_params["expires_at"],
+                db_params["status"],
+                db_params["token_hash"],
             )
-
-    def _row_to_session(self, row: dict[str, Any]) -> Session:
-        """Convert database row to Session entity."""
-        # Map database schema to domain entity
-        is_active = row["status"] == "active"
-
-        # For now, we'll use empty permissions list - in real implementation,
-        # you'd probably join with user_permissions or role_permissions tables
-        return Session(
-            id=SessionId(str(row["id"])),
-            user_id=UserId(str(row["user_id"])),
-            email=Email(row["email"]),
-            permissions=[],  # TODO: Load from user_permissions/role_permissions
-            created_at=row["created_at"],
-            expires_at=row["expires_at"],
-            is_active=is_active,
-        )
 
 
 class PostgreSQLReadSessionRepository(ReadSessionRepository):
@@ -106,13 +86,15 @@ class PostgreSQLReadSessionRepository(ReadSessionRepository):
         if not row:
             return None
 
-        # Map database schema to domain entity
+        # Use pure mapping function - note: this will detect active status from row
+        session = row_to_session(row)
+        # Override is_active since we already filtered for active sessions
         return Session(
-            id=SessionId(str(row["id"])),
-            user_id=UserId(str(row["user_id"])),
-            email=Email(row["email"]),
-            permissions=[],  # TODO: Load from user_permissions/role_permissions
-            created_at=row["created_at"],
-            expires_at=row["expires_at"],
+            id=session.id,
+            user_id=session.user_id,
+            email=session.email,
+            permissions=session.permissions,
+            created_at=session.created_at,
+            expires_at=session.expires_at,
             is_active=True,  # We already filtered for active sessions
         )

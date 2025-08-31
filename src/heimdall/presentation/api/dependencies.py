@@ -24,6 +24,7 @@ def should_use_postgres() -> bool:
     persistence_mode = get_persistence_mode()
     return persistence_mode == "postgres"
 
+
 # Global in-memory storage for demo/testing (would be replaced with real DB)
 _USERS: dict[str, User] = {}
 _SESSIONS: dict[str, Session] = {}
@@ -133,12 +134,39 @@ _EVENT_BUS_DEPENDENCY = Depends(get_event_bus)
 
 
 def get_command_dependencies(
+    user_repo=None,
+    session_repo=None,
+    token_service=None,
+    event_bus=None,
+) -> CommandDependencies:
+    """Create command dependencies for write operations."""
+    return CommandDependencies(
+        user_repository=user_repo or get_user_repository(),
+        session_repository=session_repo or get_session_repository(),
+        token_service=token_service or get_token_service(),
+        event_bus=event_bus or get_event_bus(),
+    )
+
+
+def get_query_dependencies(
+    session_repo=None,
+    token_service=None,
+) -> QueryDependencies:
+    """Create query dependencies for read operations (minimal dependencies)."""
+    return QueryDependencies(
+        session_repository=session_repo or get_session_repository(),
+        token_service=token_service or get_token_service(),
+    )
+
+
+# FastAPI versions that use Depends()
+def get_command_dependencies_fastapi(
     user_repo=_USER_REPO_DEPENDENCY,
     session_repo=_SESSION_REPO_DEPENDENCY,
     token_service=_TOKEN_SERVICE_DEPENDENCY,
     event_bus=_EVENT_BUS_DEPENDENCY,
 ) -> CommandDependencies:
-    """Create command dependencies for write operations."""
+    """FastAPI version that uses Depends() for dependency injection."""
     return CommandDependencies(
         user_repository=user_repo,
         session_repository=session_repo,
@@ -147,11 +175,11 @@ def get_command_dependencies(
     )
 
 
-def get_query_dependencies(
+def get_query_dependencies_fastapi(
     session_repo=_SESSION_REPO_DEPENDENCY,
     token_service=_TOKEN_SERVICE_DEPENDENCY,
 ) -> QueryDependencies:
-    """Create query dependencies for read operations (minimal dependencies)."""
+    """FastAPI version that uses Depends() for dependency injection."""
     return QueryDependencies(
         session_repository=session_repo,
         token_service=token_service,
@@ -187,21 +215,39 @@ def get_dynamic_query_dependencies() -> QueryDependencies:
         _, postgres_query_deps = _get_postgresql_dependencies()
         if postgres_query_deps:
             return postgres_query_deps()
-    # Fallback to mock dependencies  
+    # Fallback to mock dependencies
     return get_query_dependencies()
 
 
-# Create dependencies for auth functions - these will dynamically select the right backend
+# Create dependencies for auth functions - dynamically select the right backend
 _COMMAND_DEPS_DEPENDENCY = Depends(get_dynamic_command_dependencies)
 _QUERY_DEPS_DEPENDENCY = Depends(get_dynamic_query_dependencies)
 
 
 def get_auth_functions(
-    command_deps: CommandDependencies = _COMMAND_DEPS_DEPENDENCY,
-    query_deps: QueryDependencies = _QUERY_DEPS_DEPENDENCY,
+    command_deps: CommandDependencies | None = None,
+    query_deps: QueryDependencies | None = None,
 ) -> dict[str, Callable[..., Any]]:
     """Get curried CQRS auth functions with dynamic backend selection."""
     persistence_mode = get_persistence_mode()
     print(f"🔧 Using persistence mode: {persistence_mode}")
-    
+
+    # If dependencies aren't provided, create them directly (for non-FastAPI usage)
+    if command_deps is None:
+        command_deps = get_dynamic_command_dependencies()
+    if query_deps is None:
+        query_deps = get_dynamic_query_dependencies()
+
+    return curry_cqrs_functions(command_deps, query_deps)
+
+
+# FastAPI dependency version that uses Depends()
+def get_auth_functions_fastapi(
+    command_deps: CommandDependencies = _COMMAND_DEPS_DEPENDENCY,
+    query_deps: QueryDependencies = _QUERY_DEPS_DEPENDENCY,
+) -> dict[str, Callable[..., Any]]:
+    """FastAPI version that uses Depends() for dependency injection."""
+    persistence_mode = get_persistence_mode()
+    print(f"🔧 Using persistence mode: {persistence_mode}")
+
     return curry_cqrs_functions(command_deps, query_deps)

@@ -8,8 +8,8 @@ import pytest_asyncio
 from fastapi.testclient import TestClient
 
 from heimdall.infrastructure.persistence.postgres.database import (
-    DatabaseConfig,
     DatabaseManager,
+    create_database_config,
 )
 from heimdall.presentation.api.main import create_app
 
@@ -78,14 +78,15 @@ class DatabaseTestFixtures:
 @pytest_asyncio.fixture(scope="session")
 async def database_manager() -> AsyncGenerator[DatabaseManager]:
     """Session-scoped database manager for integration tests."""
-    # Ensure we're using the test database
+    # Ensure we're using the test database (same as our docker-compose setup)
     test_db_url = os.getenv(
         "DATABASE_URL",
-        "postgresql+asyncpg://heimdall_test_user:heimdall_test_password@localhost:5433/heimdall_test",
+        "postgresql+asyncpg://heimdall_user:heimdall_secure_password@localhost:5432/heimdall",
     )
 
     # Override the global database manager for tests
-    config = DatabaseConfig(test_db_url)
+    os.environ["DATABASE_URL"] = test_db_url
+    config = create_database_config()
     db_manager = DatabaseManager(config)
 
     try:
@@ -110,8 +111,8 @@ async def clean_database(database_manager: DatabaseManager):
 def postgres_api_client(database_manager) -> TestClient:
     """Test client configured to use PostgreSQL repositories."""
     # Set environment to use PostgreSQL
-    original_postgres = os.environ.get("USE_POSTGRES")
-    os.environ["USE_POSTGRES"] = "true"
+    original_persistence = os.environ.get("PERSISTENCE_MODE")
+    os.environ["PERSISTENCE_MODE"] = "postgres"
 
     try:
         app = create_app()
@@ -119,10 +120,10 @@ def postgres_api_client(database_manager) -> TestClient:
         return client
     finally:
         # Restore original setting
-        if original_postgres is not None:
-            os.environ["USE_POSTGRES"] = original_postgres
+        if original_persistence is not None:
+            os.environ["PERSISTENCE_MODE"] = original_persistence
         else:
-            os.environ.pop("USE_POSTGRES", None)
+            os.environ.pop("PERSISTENCE_MODE", None)
 
 
 class PostgreSQLAPIClient:
