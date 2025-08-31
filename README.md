@@ -116,34 +116,54 @@ src/
 │           └── health.py    # Health check endpoints
 └── tests/
     ├── unit/           # 87 tests - Domain & CQRS logic
-    └── integration/    # 45 tests - Full-stack API testing
-        ├── aux/        # Test infrastructure
-        └── usecases/   # Organized by CQRS patterns
-            ├── commands/  # Write operation tests
-            └── queries/   # Read operation tests
+    └── integration/    # 56 tests - Full-stack API testing
+        ├── aux/        # Test infrastructure (8 tests)
+        ├── usecases/   # Organized by CQRS patterns (45 tests)
+        │   ├── commands/  # Write operation tests
+        │   └── queries/   # Read operation tests
+        └── postgres/   # PostgreSQL-specific tests (3 tests)
+            ├── test_minimal.py        # Repository functionality
+            ├── test_basic_connection.py # Database connectivity
+            └── test_database_persistence.py # Advanced scenarios
 ```
 
-## 🧪 Testing (132 Total Tests)
+## 🧪 Testing (143 Total Tests)
 
+### Quick Commands (Makefile)
 ```bash
-# Run all tests
-PYTHONPATH=src python -m pytest src/tests/ -v
+# Default: Run all test suites (comprehensive, no Docker)
+make test              # 140 tests in ~14s (unit + integration)
 
-# Run unit tests only (87 tests)
+# Specific test suites
+make test-unit         # 87 tests in ~5s (fast feedback)
+make test-integration  # 53 tests in ~9s (API integration)
+make test-postgres     # 3 tests in ~30s (database persistence, Docker)
+
+# Development workflows
+make quick             # Same as test-unit (fast development)
+make workflow          # Full development pipeline
+make ci-test           # Complete CI validation
+```
+
+### Manual Commands
+```bash
+# Unit tests only
 PYTHONPATH=src python -m pytest src/tests/unit/ -v
 
-# Run integration tests only (45 tests)
-PYTHONPATH=src python -m pytest src/tests/integration/ -v
+# Integration tests (in-memory)
+PERSISTENCE_MODE=in-memory PYTHONPATH=src python -m pytest src/tests/integration/usecases/ src/tests/integration/aux/ -v
 
-# Run with coverage
-PYTHONPATH=src python -m pytest --cov=heimdall
+# PostgreSQL tests (requires Docker)
+make test-postgres     # Manages Docker lifecycle automatically
 ```
 
 ### Test Coverage
 - **87 Unit Tests**: Domain entities, CQRS commands/queries, value objects, events
-- **45 Integration Tests**: Full-stack API testing through FastAPI endpoints
+- **53 Integration Tests**: Full-stack API testing through FastAPI endpoints
   - Commands: Write operations (login, register) - 1% traffic
   - Queries: Read operations (token validation, health checks) - 99% traffic
+- **3 PostgreSQL Tests**: Complete database persistence with Docker management
+- **Total: 143 automated tests** with comprehensive coverage
 
 ## 📖 Documentation
 
@@ -234,14 +254,53 @@ await auth_functions["validate"](token)     # Read operation (99% traffic)
 # Clone and navigate to project
 cd heimdall
 
-# Run all tests to verify setup
-PYTHONPATH=src python -m pytest src/tests/ -v
+# Start the full application with PostgreSQL
+docker-compose up -d
 
-# Run specific functional use case tests
-PYTHONPATH=src python -m pytest src/tests/unit/test_functional_use_cases.py -v
+# Check application status
+curl http://localhost:8000/
 
-# Start development server (when Poetry configured)
-poetry run uvicorn heimdall.presentation.api.main:app --reload --host 0.0.0.0 --port 8000
+# View logs
+docker-compose logs -f
+```
+
+#### Local Development
+
+##### In-Memory Mode (Default)
+```bash
+# Install dependencies
+make install  # or poetry install
+
+# Run all tests to verify setup  
+make test     # 140 tests in ~14s (unit + integration)
+
+# Quick development feedback
+make quick    # 87 unit tests in ~5s
+
+# Start development server with in-memory storage
+make dev      # Starts on localhost:8000
+
+# Code quality checks
+make format   # Auto-format code
+make lint     # Check code quality  
+make compile  # Type checking + validation
+```
+
+##### PostgreSQL Mode  
+```bash
+# Start PostgreSQL with Docker
+make db-up    # Start PostgreSQL container only
+
+# Test PostgreSQL integration (manages Docker lifecycle)
+make test-postgres  # 3 tests with automatic container management
+
+# Start development server with PostgreSQL persistence  
+PERSISTENCE_MODE=postgres make dev
+
+# Database utilities
+make db-shell   # Open PostgreSQL shell
+make db-up      # Start database only
+make db-down    # Stop all services
 ```
 
 ### API Documentation

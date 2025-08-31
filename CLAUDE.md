@@ -265,3 +265,10 @@ docker-compose logs -f  # View logs
 - Prioritize read performance over write performance
 - Cache invalidation is critical for security changes
 - Always consider the 100:1 read/write ratio in design decisions
+
+## Recent Updates (August 2024)
+- **PostgreSQL Integration**: Added full PostgreSQL support with asyncpg driver for production persistence
+- **Dual Persistence Mode**: Environment-based switching between in-memory (development) and PostgreSQL (production)
+- **Enhanced Testing**: 143 total tests including PostgreSQL integration tests with Docker support
+- **Linting Configuration**: Configured ruff to support PascalCase factory functions while maintaining security rules
+- **API Refinement**: `TokenClaims` factory now auto-generates `issued_at` timestamp (removed as parameter)
