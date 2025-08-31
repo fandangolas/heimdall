@@ -95,6 +95,13 @@ make compile           # Type checking (mypy + ruff validation)
 make check             # Run lint + compile together
 ```
 
+#### Linting Configuration
+The project uses `ruff` for linting and formatting with custom rules configured in `ruff.toml`:
+- **Factory Functions**: PascalCase naming is allowed for factory functions (`LoginRequest`, `Email`, `Password`, etc.) as they mimic constructor behavior in our functional approach
+- **Security**: All Bandit security rules are active except S101 (assert in tests)
+- **Documentation**: Relaxed docstring requirements for internal methods
+- **Testing**: Security and documentation rules are relaxed in test files
+
 ### **Workflows** 
 ```bash
 make quick             # Fast unit tests (development loop)
