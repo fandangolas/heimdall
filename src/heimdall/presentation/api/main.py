@@ -13,6 +13,19 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from heimdall.presentation.api.health import router as health_router
 from heimdall.presentation.api.routes import router as auth_router
 
+# PostgreSQL imports (available in all modes, will gracefully handle missing deps)
+try:
+    from heimdall.infrastructure.persistence.postgres.database import (
+        close_database,
+        initialize_database,
+    )
+
+    POSTGRES_AVAILABLE = True
+except ImportError:
+    POSTGRES_AVAILABLE = False
+    initialize_database = None
+    close_database = None
+
 
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
@@ -25,17 +38,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     use_postgres = persistence_mode == "postgres"
 
     if use_postgres:
-        try:
-            from heimdall.infrastructure.persistence.postgres.database import (
-                initialize_database,
+        if POSTGRES_AVAILABLE and initialize_database:
+            try:
+                await initialize_database()
+                print("✅ PostgreSQL database connection initialized")
+            except Exception as e:
+                print(
+                    f"⚠️ Failed to initialize database: {e}, "
+                    "using in-memory repositories"
+                )
+        else:
+            print(
+                "⚠️ PostgreSQL dependencies not available, using in-memory repositories"
             )
-
-            await initialize_database()
-            print("✅ PostgreSQL database connection initialized")
-        except ImportError:
-            print("⚠️ PostgreSQL dependencies not available, using mock repositories")
-        except Exception as e:
-            print(f"⚠️ Failed to initialize database: {e}, using mock repositories")
+            print("   Install with: pip install asyncpg")
 
     print("✅ Heimdall ready to guard the Bifrost Bridge!")
 
@@ -46,12 +62,8 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
 
     # Close database connections if using PostgreSQL
     persistence_mode = os.getenv("PERSISTENCE_MODE", "in-memory").lower()
-    if persistence_mode == "postgres":
+    if persistence_mode == "postgres" and POSTGRES_AVAILABLE and close_database:
         try:
-            from heimdall.infrastructure.persistence.postgres.database import (
-                close_database,
-            )
-
             await close_database()
             print("✅ PostgreSQL database connections closed")
         except Exception as e:

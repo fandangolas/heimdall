@@ -1,7 +1,13 @@
 """Integration tests verifying data persistence with PostgreSQL."""
 
+import asyncio
+import time
+
 import pytest
 import pytest_asyncio
+
+from heimdall.domain.value_objects import Password
+from heimdall.domain.value_objects.password import verify_password
 
 
 class TestPostgreSQLPersistence:
@@ -99,7 +105,6 @@ class TestPostgreSQLPersistence:
     @pytest.mark.asyncio
     async def test_concurrent_operations_database_consistency(self):
         """Test database consistency with concurrent operations."""
-        import asyncio
 
         async def register_user(email_suffix: str):
             response = self.client.post(
@@ -157,9 +162,6 @@ class TestPostgreSQLTransactionBehavior:
         user = await self.client.get_user_from_database(email)
         assert user is not None
         # The password hash should be from the first registration
-        from heimdall.domain.value_objects import Password
-        from heimdall.domain.value_objects.password import verify_password
-
         assert verify_password(Password("Password123"), user.password_hash)
 
 
@@ -175,8 +177,6 @@ class TestPostgreSQLPerformance:
     @pytest.mark.asyncio
     async def test_batch_user_creation_performance(self):
         """Test performance of creating many users."""
-        import time
-
         start_time = time.time()
 
         # Create 50 users (reasonable number for integration test)
@@ -202,8 +202,6 @@ class TestPostgreSQLPerformance:
     @pytest.mark.asyncio
     async def test_token_validation_performance(self):
         """Test performance of token validation (read-heavy operation)."""
-        import time
-
         # Create and activate user
         await self.client.create_test_user_directly(
             "perf_validation@example.com", "Password123", is_active=True

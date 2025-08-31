@@ -4,7 +4,7 @@ from typing import NamedTuple
 
 from ...domain.repositories.read_repositories import ReadSessionRepository
 from ...domain.services import TokenService
-from ...domain.value_objects import Token
+from ...domain.value_objects import SessionId, Token
 from ..dto import ValidateTokenResponse
 
 
@@ -26,8 +26,6 @@ async def validate_token_query(
         claims = deps.token_service.validate_token(token)
 
         # Fast session lookup (could be cached in future)
-        from ...domain.value_objects import SessionId
-
         session_id = SessionId(claims.session_id)
         session = await deps.session_repository.find_by_id(session_id)
 

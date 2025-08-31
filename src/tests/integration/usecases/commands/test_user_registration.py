@@ -1,5 +1,7 @@
 """Integration tests for user registration command."""
 
+import uuid
+
 from tests.integration.aux.base_test import BaseCommandIntegrationTest
 
 
@@ -21,8 +23,6 @@ class TestUserRegistrationCommand(BaseCommandIntegrationTest):
         assert "user_id" in data
         assert data["message"] == "User created successfully"
         # Ensure user_id is a valid UUID format
-        import uuid
-
         uuid.UUID(data["user_id"])  # Will raise exception if invalid
 
     def test_registration_with_existing_email_fails(self):

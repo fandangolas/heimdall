@@ -2,11 +2,16 @@
 
 import asyncio
 import os
+import uuid
 
 import asyncpg
 import pytest
 from fastapi.testclient import TestClient
 
+from heimdall.domain.entities import User
+from heimdall.domain.value_objects import Email, Password
+from heimdall.infrastructure.persistence.postgres.database import initialize_database
+from heimdall.infrastructure.persistence.postgres.mappers import user_to_db_params
 from heimdall.presentation.api.main import create_app
 
 
@@ -25,10 +30,6 @@ def postgres_client(postgres_app):
 
     # Manually initialize database before creating client
     async def init_db():
-        from heimdall.infrastructure.persistence.postgres.database import (
-            initialize_database,
-        )
-
         await initialize_database()
 
     asyncio.run(init_db())
@@ -119,14 +120,6 @@ def test_user_login_with_postgres(postgres_client):
         )
         try:
             # Use our domain logic to create the user properly
-            import uuid
-
-            from heimdall.domain.entities import User
-            from heimdall.domain.value_objects import Email, Password
-            from heimdall.infrastructure.persistence.postgres.mappers import (
-                user_to_db_params,
-            )
-
             user = User.create(Email(email), Password(password))
             user.activate()  # Make user active for login
 

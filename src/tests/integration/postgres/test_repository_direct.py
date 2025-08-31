@@ -7,6 +7,7 @@ import pytest_asyncio
 
 from heimdall.domain.entities import User
 from heimdall.domain.value_objects import Email, Password
+from heimdall.domain.value_objects.password import verify_password
 from heimdall.infrastructure.persistence.postgres.database import (
     DatabaseManager,
     create_database_config,
@@ -69,8 +70,6 @@ async def test_user_repository_save_and_find(db_manager):
     assert found_user.is_active == user.is_active  # Should be inactive initially
 
     # Verify password hash is correct
-    from heimdall.domain.value_objects.password import verify_password
-
     assert verify_password(Password("SecurePass123"), found_user.password_hash)
 
 

@@ -3,6 +3,7 @@
 
 import asyncio
 import os
+import traceback
 
 # Set up environment for test
 os.environ["USE_POSTGRES"] = "true"
@@ -11,19 +12,31 @@ os.environ["DATABASE_URL"] = (
 )
 os.environ["PYTHONPATH"] = "/Users/silveira.nic/dev/personal/python/heimdall/src"
 
+# Imports (gracefully handle missing dependencies)
+try:
+    from heimdall.domain.entities import User
+    from heimdall.domain.value_objects import Email, Password
+    from heimdall.infrastructure.persistence.postgres.database import (
+        get_database_manager,
+    )
+    from heimdall.infrastructure.persistence.postgres.user_repository import (
+        PostgreSQLUserRepository,
+    )
+
+    POSTGRES_AVAILABLE = True
+except ImportError as import_error:
+    POSTGRES_AVAILABLE = False
+    print(f"⚠️  PostgreSQL dependencies not available: {import_error}")
+    print("   Install with: pip install asyncpg")
+
 
 async def test_postgresql_connection():
     """Test basic PostgreSQL connection."""
-    try:
-        from heimdall.domain.entities import User
-        from heimdall.domain.value_objects import Email, Password
-        from heimdall.infrastructure.persistence.postgres.database import (
-            get_database_manager,
-        )
-        from heimdall.infrastructure.persistence.postgres.user_repository import (
-            PostgreSQLUserRepository,
-        )
+    if not POSTGRES_AVAILABLE:
+        print("❌ Cannot run test: PostgreSQL dependencies not available")
+        return False
 
+    try:
         print("🧪 Testing PostgreSQL integration...")
 
         # Get database manager
@@ -64,8 +77,6 @@ async def test_postgresql_connection():
 
     except Exception as e:
         print(f"❌ Test failed: {e}")
-        import traceback
-
         traceback.print_exc()
         return False
 

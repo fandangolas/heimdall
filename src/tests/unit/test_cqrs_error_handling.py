@@ -1,5 +1,6 @@
 """Tests for CQRS error handling and edge cases."""
 
+import asyncio
 from unittest.mock import AsyncMock, Mock
 
 import pytest
@@ -221,8 +222,6 @@ class TestCQRSErrorHandling:
         )
 
         # Act - Concurrent queries with one failing
-        import asyncio
-
         good_token = Token("good.jwt.token")  # Valid JWT format
         bad_token = Token("bad.jwt.token")  # Valid JWT format
 

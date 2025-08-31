@@ -7,9 +7,14 @@ import pytest
 import pytest_asyncio
 from fastapi.testclient import TestClient
 
+from heimdall.domain.entities import User
+from heimdall.domain.value_objects import Email, Password
 from heimdall.infrastructure.persistence.postgres.database import (
     DatabaseManager,
     create_database_config,
+)
+from heimdall.infrastructure.persistence.postgres.user_repository import (
+    PostgreSQLUserRepository,
 )
 from heimdall.presentation.api.main import create_app
 
@@ -141,12 +146,6 @@ class PostgreSQLAPIClient:
         self, email: str, password: str, is_active: bool = True
     ):
         """Create a user directly in the database for test setup."""
-        from heimdall.domain.entities import User
-        from heimdall.domain.value_objects import Email, Password
-        from heimdall.infrastructure.persistence.postgres.user_repository import (
-            PostgreSQLUserRepository,
-        )
-
         user = User.create(Email(email), Password(password))
         if is_active:
             user.activate()
@@ -157,11 +156,6 @@ class PostgreSQLAPIClient:
 
     async def get_user_from_database(self, email: str):
         """Get user directly from database for verification."""
-        from heimdall.domain.value_objects import Email
-        from heimdall.infrastructure.persistence.postgres.user_repository import (
-            PostgreSQLUserRepository,
-        )
-
         repo = PostgreSQLUserRepository(self.db_manager)
         return await repo.find_by_email(Email(email))
 

@@ -13,6 +13,19 @@ from heimdall.application.queries import QueryDependencies
 from heimdall.domain.entities import Session, User
 from heimdall.domain.value_objects import Token, TokenClaims
 
+# PostgreSQL imports (available in postgres mode, will gracefully handle missing deps)
+try:
+    from heimdall.infrastructure.persistence.postgres.dependencies import (
+        get_postgresql_command_dependencies,
+        get_postgresql_query_dependencies,
+    )
+
+    POSTGRES_DEPS_AVAILABLE = True
+except ImportError:
+    POSTGRES_DEPS_AVAILABLE = False
+    get_postgresql_command_dependencies = None
+    get_postgresql_query_dependencies = None
+
 
 def get_persistence_mode() -> str:
     """Get persistence mode from environment variable."""
@@ -188,15 +201,9 @@ def get_query_dependencies_fastapi(
 
 def _get_postgresql_dependencies():
     """Try to get PostgreSQL dependencies."""
-    try:
-        from heimdall.infrastructure.persistence.postgres.dependencies import (
-            get_postgresql_command_dependencies,
-            get_postgresql_query_dependencies,
-        )
-
+    if POSTGRES_DEPS_AVAILABLE:
         return get_postgresql_command_dependencies, get_postgresql_query_dependencies
-    except ImportError:
-        return None, None
+    return None, None
 
 
 def get_dynamic_command_dependencies() -> CommandDependencies:

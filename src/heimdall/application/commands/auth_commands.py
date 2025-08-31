@@ -9,7 +9,7 @@ from ...domain.repositories.write_repositories import (
     WriteUserRepository,
 )
 from ...domain.services import EventBus, TokenService
-from ...domain.value_objects import Email, Password, Token
+from ...domain.value_objects import Email, Password, SessionId, Token
 from ..dto import LoginRequest, LoginResponse, RegisterRequest, RegisterResponse
 
 
@@ -68,8 +68,6 @@ async def logout_user_command(
     claims = deps.token_service.validate_token(token)
 
     # Find session
-    from ...domain.value_objects import SessionId
-
     session_id = SessionId(claims.session_id)
     session = await deps.session_repository.find_by_id(session_id)
 
