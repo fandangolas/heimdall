@@ -20,8 +20,20 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     # Startup
     print("🚀 Heimdall authentication service starting up...")
 
-    # TODO: Initialize database connections, Redis, etc.
-    # For now using in-memory implementations
+    # Initialize database if using PostgreSQL
+    use_postgres = os.getenv("USE_POSTGRES", "false").lower() == "true"
+    
+    if use_postgres:
+        try:
+            from heimdall.infrastructure.persistence.postgres.database import (
+                initialize_database
+            )
+            await initialize_database()
+            print("✅ PostgreSQL database connection initialized")
+        except ImportError:
+            print("⚠️ PostgreSQL dependencies not available, using mock repositories")
+        except Exception as e:
+            print(f"⚠️ Failed to initialize database: {e}, using mock repositories")
 
     print("✅ Heimdall ready to guard the Bifrost Bridge!")
 
@@ -30,7 +42,16 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None]:
     # Shutdown
     print("🛑 Heimdall authentication service shutting down...")
 
-    # TODO: Close database connections, cleanup resources
+    # Close database connections if using PostgreSQL
+    if use_postgres:
+        try:
+            from heimdall.infrastructure.persistence.postgres.database import (
+                close_database
+            )
+            await close_database()
+            print("✅ PostgreSQL database connections closed")
+        except Exception as e:
+            print(f"⚠️ Error closing database: {e}")
 
     print("✅ Heimdall shutdown complete")
 

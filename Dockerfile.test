@@ -1,0 +1,36 @@
+# Test-specific Dockerfile with additional testing dependencies
+FROM python:3.13-slim
+
+# Set working directory
+WORKDIR /app
+
+# Install system dependencies including git for coverage
+RUN apt-get update && apt-get install -y \
+    gcc \
+    libpq5 \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy dependency files
+COPY pyproject.toml README.md ./
+
+# Install Poetry and dependencies including dev dependencies  
+RUN pip install --no-cache-dir poetry==1.8.0 \
+    && poetry config virtualenvs.create false \
+    && poetry lock --no-update \
+    && poetry install --with dev --no-interaction --no-ansi
+
+# Create test results directory
+RUN mkdir -p /app/test-results
+
+# Set environment variables
+ENV PYTHONPATH=/app/src \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    ENVIRONMENT=test
+
+# Copy source code (will be mounted as volume in docker-compose)
+COPY src/ ./src/
+
+# Default command (will be overridden in docker-compose)
+CMD ["pytest", "tests/", "-v"]

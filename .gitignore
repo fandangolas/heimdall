@@ -51,6 +51,12 @@ coverage.xml
 .pytest_cache/
 cover/
 
+# Test results and artifacts
+test-results/
+junit.xml
+*-junit.xml
+*-coverage.xml
+
 # Translations
 *.mo
 *.pot

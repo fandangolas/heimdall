@@ -1,0 +1,86 @@
+services:
+  test-postgres:
+    image: postgres:16-alpine
+    container_name: heimdall-test-postgres
+    restart: no  # Don't restart during tests
+    environment:
+      POSTGRES_DB: heimdall_test
+      POSTGRES_USER: heimdall_test_user
+      POSTGRES_PASSWORD: ${POSTGRES_TEST_PASSWORD:-heimdall_test_password}
+      # Speed up tests by reducing durability guarantees
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    ports:
+      - "5433:5432"  # Different port to avoid conflicts
+    volumes:
+      - ./migrations/init-test.sql:/docker-entrypoint-initdb.d/001_init.sql:ro
+      # Use tmpfs for faster test database (data doesn't persist)
+      - type: tmpfs
+        target: /var/lib/postgresql/data
+        tmpfs:
+          size: 512M
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U heimdall_test_user -d heimdall_test"]
+      interval: 2s
+      timeout: 1s
+      retries: 10
+      start_period: 5s
+    networks:
+      - heimdall-test-network
+    # Optimize PostgreSQL for testing
+    command: >
+      postgres
+      -c shared_buffers=128MB
+      -c max_connections=100
+      -c synchronous_commit=off
+      -c checkpoint_timeout=30s
+      -c checkpoint_completion_target=0.9
+      -c wal_buffers=16MB
+      -c random_page_cost=1.1
+      -c effective_cache_size=256MB
+
+  heimdall-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    container_name: heimdall-integration-tests
+    depends_on:
+      test-postgres:
+        condition: service_healthy
+    environment:
+      # Test database configuration
+      DATABASE_URL: postgresql+asyncpg://heimdall_test_user:${POSTGRES_TEST_PASSWORD:-heimdall_test_password}@test-postgres:5432/heimdall_test
+      USE_POSTGRES: "true"
+      
+      # Test-specific settings
+      ENVIRONMENT: test
+      SECRET_KEY: test-secret-key-not-for-production
+      JWT_SECRET_KEY: test-jwt-secret-key-not-for-production
+      JWT_ALGORITHM: HS256
+      JWT_EXPIRATION_MINUTES: 15
+      LOG_LEVEL: DEBUG
+      
+      # Pytest specific
+      PYTHONPATH: /app/src
+      PYTEST_CURRENT_TEST: "true"
+    volumes:
+      - ./src:/app/src:ro
+      - ./src/tests:/app/tests:ro
+      - ./pytest.ini:/app/pytest.ini:ro
+      # Mount test results directory
+      - ./test-results:/app/test-results
+    networks:
+      - heimdall-test-network
+    # Override default command to run tests
+    command: >
+      sh -c "
+        echo 'Waiting for database to be ready...' &&
+        python -c 'import asyncio; from heimdall.infrastructure.persistence.postgres.database import initialize_database; asyncio.run(initialize_database())' &&
+        echo 'Running integration tests...' &&
+        pytest tests/integration/ -v --tb=short --junitxml=/app/test-results/junit.xml --cov=heimdall --cov-report=xml:/app/test-results/coverage.xml --cov-report=html:/app/test-results/htmlcov
+      "
+    profiles:
+      - test
+
+networks:
+  heimdall-test-network:
+    driver: bridge

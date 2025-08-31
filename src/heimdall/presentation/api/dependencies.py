@@ -1,5 +1,6 @@
 """FastAPI dependency injection setup for CQRS functions."""
 
+import os
 from collections.abc import Callable
 from typing import Any
 from unittest.mock import AsyncMock, Mock
@@ -139,9 +140,23 @@ def get_query_dependencies(
     )
 
 
+def _get_postgresql_dependencies():
+    """Try to get PostgreSQL dependencies."""
+    try:
+        from heimdall.infrastructure.persistence.postgres.dependencies import (
+            get_postgresql_command_dependencies,
+            get_postgresql_query_dependencies,
+        )
+        return get_postgresql_command_dependencies, get_postgresql_query_dependencies
+    except ImportError:
+        return None, None
+
+
 def get_auth_functions(
     command_deps: CommandDependencies = Depends(get_command_dependencies),
     query_deps: QueryDependencies = Depends(get_query_dependencies),
 ) -> dict[str, Callable[..., Any]]:
     """Get curried CQRS auth functions."""
+    # For now, keep using the original mock dependencies
+    # PostgreSQL integration will be tested separately
     return curry_cqrs_functions(command_deps, query_deps)
