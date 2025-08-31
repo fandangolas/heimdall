@@ -40,7 +40,7 @@ def LoginRequest(email: str, password: str) -> LoginRequestValue:
 
 def LoginResponse(
     access_token: str,
-    token_type: str = "bearer",  # noqa: S107
+    token_type: str = "bearer",  # noqa: S107 - "bearer" is a token type, not a password
     expires_in: int = 900,
 ) -> LoginResponseValue:
     """Create login response."""
