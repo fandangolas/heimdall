@@ -124,46 +124,54 @@ src/
 │           └── health.py    # Health check endpoints
 └── tests/
     ├── unit/           # 87 tests - Domain & CQRS logic
-    └── integration/    # 45 tests - Full-stack API testing
-        ├── aux/        # Test infrastructure
-        └── usecases/   # Organized by CQRS patterns
-            ├── commands/  # Write operation tests
-            └── queries/   # Read operation tests
+    └── integration/    # 56 tests - Full-stack API testing
+        ├── aux/        # Test infrastructure (8 tests)
+        ├── usecases/   # Organized by CQRS patterns (45 tests)
+        │   ├── commands/  # Write operation tests
+        │   └── queries/   # Read operation tests
+        └── postgres/   # PostgreSQL-specific tests (3 tests)
+            ├── test_minimal.py        # Repository functionality
+            ├── test_basic_connection.py # Database connectivity
+            └── test_database_persistence.py # Advanced scenarios
 ```
 
-## 🧪 Testing (132 Total Tests)
+## 🧪 Testing (143 Total Tests)
 
-### In-Memory Testing (Default)
+### Quick Commands (Makefile)
 ```bash
-# Run all tests with in-memory repositories
-PYTHONPATH=src python -m pytest src/tests/ -v
+# Default: Run all test suites (comprehensive, no Docker)
+make test              # 140 tests in ~14s (unit + integration)
 
-# Run unit tests only (87 tests)
+# Specific test suites
+make test-unit         # 87 tests in ~5s (fast feedback)
+make test-integration  # 53 tests in ~9s (API integration)
+make test-postgres     # 3 tests in ~30s (database persistence, Docker)
+
+# Development workflows
+make quick             # Same as test-unit (fast development)
+make workflow          # Full development pipeline
+make ci-test           # Complete CI validation
+```
+
+### Manual Commands
+```bash
+# Unit tests only
 PYTHONPATH=src python -m pytest src/tests/unit/ -v
 
-# Run integration tests only (45 tests)  
-PYTHONPATH=src python -m pytest src/tests/integration/ -v
+# Integration tests (in-memory)
+PERSISTENCE_MODE=in-memory PYTHONPATH=src python -m pytest src/tests/integration/usecases/ src/tests/integration/aux/ -v
 
-# Run with coverage
-PYTHONPATH=src python -m pytest --cov=heimdall
-```
-
-### PostgreSQL Testing
-```bash
-# Test PostgreSQL integration with Docker
-docker-compose up -d postgres
-./scripts/test-postgres-working.sh
-
-# Run integration tests with PostgreSQL
-PERSISTENCE_MODE=postgres PYTHONPATH=src python -m pytest src/tests/integration/ -v
+# PostgreSQL tests (requires Docker)
+make test-postgres     # Manages Docker lifecycle automatically
 ```
 
 ### Test Coverage
 - **87 Unit Tests**: Domain entities, CQRS commands/queries, value objects, events
-- **45 Integration Tests**: Full-stack API testing through FastAPI endpoints
+- **53 Integration Tests**: Full-stack API testing through FastAPI endpoints
   - Commands: Write operations (login, register) - 1% traffic
   - Queries: Read operations (token validation, health checks) - 99% traffic
-- **PostgreSQL Integration**: Complete database persistence testing with Docker
+- **3 PostgreSQL Tests**: Complete database persistence with Docker management
+- **Total: 143 automated tests** with comprehensive coverage
 
 ## 📖 Documentation
 
@@ -341,32 +349,38 @@ docker-compose logs -f
 ##### In-Memory Mode (Default)
 ```bash
 # Install dependencies
-poetry install
+make install  # or poetry install
 
-# Run all tests to verify setup
-PYTHONPATH=src python -m pytest src/tests/ -v
+# Run all tests to verify setup  
+make test     # 140 tests in ~14s (unit + integration)
+
+# Quick development feedback
+make quick    # 87 unit tests in ~5s
 
 # Start development server with in-memory storage
-PERSISTENCE_MODE=in-memory poetry run uvicorn heimdall.presentation.api.main:app --reload
+make dev      # Starts on localhost:8000
 
-# Or simply (defaults to in-memory)
-poetry run uvicorn heimdall.presentation.api.main:app --reload
+# Code quality checks
+make format   # Auto-format code
+make lint     # Check code quality  
+make compile  # Type checking + validation
 ```
 
 ##### PostgreSQL Mode  
 ```bash
 # Start PostgreSQL with Docker
-docker-compose up -d postgres
+make db-up    # Start PostgreSQL container only
 
-# Set up database connection
-export DATABASE_URL="postgresql+asyncpg://heimdall_user:heimdall_secure_password@localhost:5432/heimdall"
-export PERSISTENCE_MODE="postgres"
+# Test PostgreSQL integration (manages Docker lifecycle)
+make test-postgres  # 3 tests with automatic container management
 
-# Run PostgreSQL integration tests
-./scripts/test-postgres-working.sh
+# Start development server with PostgreSQL persistence  
+PERSISTENCE_MODE=postgres make dev
 
-# Start development server with PostgreSQL persistence
-PERSISTENCE_MODE=postgres poetry run uvicorn heimdall.presentation.api.main:app --reload
+# Database utilities
+make db-shell   # Open PostgreSQL shell
+make db-up      # Start database only
+make db-down    # Stop all services
 ```
 
 ### API Documentation

@@ -29,23 +29,28 @@ Heimdall uses a **dual-persistence architecture** with separate test environment
 
 ## Running Tests
 
-### Quick Commands
+### Quick Commands (Enhanced Makefile)
 
 ```bash
-# Run unit tests (fast, no dependencies)
-make test-unit
+# Default: Run all test suites (comprehensive, no Docker)
+make test              # 140 tests in ~14s (unit + integration)
 
-# Run integration tests (in-memory, no dependencies)  
-make test-integration
+# Specific test suites
+make test-unit         # 87 tests in ~5s (fast, no dependencies)
+make test-integration  # 53 tests in ~9s (in-memory, no dependencies)  
+make test-postgres     # 3 tests in ~30s (Docker managed automatically)
 
-# Start PostgreSQL database
-make db-up
+# Development workflows
+make quick             # Same as test-unit (fast development)
+make workflow          # Full development pipeline (format → lint → compile → test)
+make ci-test           # Complete CI validation (clean → check → test-all)
 
-# Test PostgreSQL integration (requires db-up)
-make test-postgres-setup
+# Database utilities
+make db-up             # Start PostgreSQL container only
+make db-shell          # Open PostgreSQL shell
 ```
 
-### Detailed Commands
+### Manual Commands (Advanced)
 
 ```bash
 # Unit tests only
@@ -55,7 +60,10 @@ PYTHONPATH=src python -m pytest src/tests/unit/ -v
 PERSISTENCE_MODE=in-memory PYTHONPATH=src python -m pytest src/tests/integration/usecases/ src/tests/integration/aux/ -v
 
 # PostgreSQL tests (requires database running)
-PERSISTENCE_MODE=postgres PYTHONPATH=src python -m pytest src/tests/integration/ -v --ignore=src/tests/integration/postgres/test_database_persistence.py
+PERSISTENCE_MODE=postgres PYTHONPATH=src python -m pytest src/tests/integration/postgres/ -v
+
+# All tests with coverage
+PYTHONPATH=src python -m pytest src/tests/ --cov=heimdall --cov-report=html
 ```
 
 ## Test Results Summary
@@ -66,9 +74,44 @@ PERSISTENCE_MODE=postgres PYTHONPATH=src python -m pytest src/tests/integration/
 |------------|--------|---------|---------|--------------|
 | **Unit Tests** | 87 | ✅ Pass | ~5s | None |
 | **Integration Tests** | 53 | ✅ Pass | ~9s | None |  
-| **PostgreSQL Core** | Manual | ✅ Pass | ~2s | Docker + PostgreSQL |
+| **PostgreSQL Tests** | 3 | ✅ Pass | ~30s | Docker (managed automatically) |
 
-**Total: 140 automated tests passing**
+**Total: 143 automated tests passing**
+
+### 📊 Test Breakdown
+- **make test**: 140 tests (87 unit + 53 integration) - comprehensive validation without Docker
+- **make test-postgres**: 3 additional tests - database persistence with Docker lifecycle management
+- **Complete coverage**: All layers from domain logic to database persistence
+
+## 🛠️ Enhanced Development Commands
+
+Beyond testing, the Makefile provides comprehensive development tools:
+
+### **Code Quality**
+```bash
+make lint              # Code linting with ruff
+make format            # Auto-format code with ruff  
+make compile           # Type checking (mypy + ruff validation)
+make check             # Run lint + compile together
+```
+
+### **Workflows** 
+```bash
+make quick             # Fast unit tests (development loop)
+make workflow          # Complete development pipeline:
+                       #   clean → format → lint → compile → test-unit → test-integration
+make ci-test           # Full CI validation:
+                       #   clean → compile → test-all
+```
+
+### **Docker & Database**
+```bash
+make docker-up         # Start all services (app + PostgreSQL)
+make docker-down       # Stop all services
+make db-up             # Start PostgreSQL only
+make db-shell          # Open PostgreSQL shell
+make build             # Build Docker images
+```
 
 ### 🎯 Test Coverage
 
@@ -106,25 +149,28 @@ Our recent refactoring successfully implemented the hybrid functional/OOP archit
 
 ### 1. **During Development** 
 ```bash
-make test-unit          # Quick feedback (5s)
+make quick             # Quick feedback (87 tests in ~5s)
+# or
+make test-unit         # Same as above
 ```
 
 ### 2. **Before Commit**
 ```bash  
-make test-unit          # Verify domain logic
-make test-integration   # Verify API integration
+make test              # Comprehensive testing (140 tests in ~14s)
+# or
+make workflow          # Full pipeline: format → lint → compile → test
 ```
 
 ### 3. **Before Deploy**
 ```bash
-make db-up             # Start PostgreSQL
-make test-postgres-setup     # Verify database integration
+make test-postgres     # Database integration (3 tests, Docker managed)
+make ci-test           # Complete CI validation
 ```
 
 ### 4. **CI/CD Pipeline**
 ```bash
-make test-unit && make test-integration  # Fast automated tests
-# PostgreSQL tests run in containerized CI environment
+make test              # 140 tests without Docker dependencies
+make test-postgres     # Database tests in containerized environment (when available)
 ```
 
 ## Troubleshooting
