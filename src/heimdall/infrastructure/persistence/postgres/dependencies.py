@@ -24,10 +24,6 @@ def get_db_manager() -> DatabaseManager:
     return get_database_manager()
 
 
-# Module-level singleton for token service
-_token_singleton = _TokenServiceSingleton()
-
-
 def get_postgresql_user_repository() -> PostgreSQLUserRepository:
     """Get PostgreSQL user repository."""
     return PostgreSQLUserRepository(get_db_manager())

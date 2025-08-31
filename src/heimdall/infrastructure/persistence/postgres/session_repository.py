@@ -49,7 +49,7 @@ class PostgreSQLWriteSessionRepository(WriteSessionRepository):
 
         # Map domain entity to database schema
         status = "active" if session.is_active else "invalidated"
-        # Generate a simple token hash for the session 
+        # Generate a simple token hash for the session
         # (in real implementation, this would be the JWT hash)
         token_hash = f"hash_{session.id}_{session.user_id}"
 
