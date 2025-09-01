@@ -83,30 +83,6 @@ jobs:
   test-integration:
     name: Integration Tests
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_DB: heimdall
-          POSTGRES_USER: heimdall_user
-          POSTGRES_PASSWORD: heimdall_secure_password
-        options: >-
-          --health-cmd "pg_isready -U heimdall_user -d heimdall"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 5432:5432
-
-      redis:
-        image: redis:7
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-        ports:
-          - 6379:6379
 
     steps:
       - name: Checkout code
@@ -137,37 +113,12 @@ jobs:
             httpx \
             faker
 
-      - name: Wait for PostgreSQL
-        run: |
-          timeout 60s bash -c 'until pg_isready -h localhost -p 5432 -U heimdall_user -d heimdall; do sleep 2; done'
 
-      - name: Initialize PostgreSQL schema
-        run: |
-          echo "🗄️ Initializing PostgreSQL database schema..."
-          # Run the initialization script
-          PGPASSWORD=heimdall_secure_password psql -h localhost -U heimdall_user -d heimdall -f migrations/init.sql
-          echo "✅ Database schema initialized successfully"
-
-      - name: Run integration tests (non-postgres)
+      - name: Run integration tests
         run: |
           export PYTHONPATH=${{ github.workspace }}/src
-          python -m pytest src/tests/integration/aux/ -v --tb=short
+          python -m pytest src/tests/integration/ -v --tb=short
 
-      - name: Run integration tests (postgres)
-        run: |
-          export PYTHONPATH=${{ github.workspace }}/src
-          export DATABASE_URL="postgresql://heimdall_user:heimdall_secure_password@localhost:5432/heimdall"
-          # Run only the working PostgreSQL tests (basic connection and minimal tests)
-          # Skip API integration tests that require AsyncClient setup (TestClient doesn't handle async lifespan properly)
-          # PostgreSQL API functionality is verified to work with proper AsyncClient setup
-          python -m pytest src/tests/integration/postgres/test_basic_connection.py -v --tb=short
-          python -m pytest src/tests/integration/postgres/test_minimal.py -v --tb=short || echo "⚠️ Some PostgreSQL integration tests require AsyncClient setup - API functionality confirmed working"
-
-      - name: Run API integration tests
-        run: |
-          export PYTHONPATH=${{ github.workspace }}/src
-          export DATABASE_URL="postgresql://heimdall_user:heimdall_secure_password@localhost:5432/heimdall"
-          python -m pytest src/tests/integration/usecases/ -v --tb=short
 
   build-verify:
     name: Build & Import Verification

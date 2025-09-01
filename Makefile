@@ -1,6 +1,6 @@
 # Heimdall Authentication Service - Development Makefile
 
-.PHONY: help install dev clean test test-unit test-integration test-postgres test-all lint format compile check quick workflow ci-test docker-up docker-down build db-up db-shell docs
+.PHONY: help install dev clean test test-unit test-integration test-all lint format compile check quick workflow ci-test docker-up docker-down build docs
 
 # Default target
 help:
@@ -16,7 +16,6 @@ help:
 	@echo "  test              Run all test suites (unit + integration, no Docker)"
 	@echo "  test-unit         Run unit tests only (fast, in-memory)"
 	@echo "  test-integration  Run integration tests (in-memory, no Docker)"
-	@echo "  test-postgres     Run PostgreSQL integration tests (Docker)"
 	@echo "  test-all          Run unit + integration tests (no Docker)"
 	@echo ""
 	@echo "Code Quality:"
@@ -34,8 +33,6 @@ help:
 	@echo "  docker-up         Start services with Docker Compose"
 	@echo "  docker-down       Stop Docker services"
 	@echo "  build             Build Docker images"
-	@echo "  db-up             Start PostgreSQL only"
-	@echo "  db-shell          Open PostgreSQL shell"
 	@echo ""
 
 # Development
@@ -66,16 +63,6 @@ test-integration:
 	@echo "🔗 Running integration tests (in-memory persistence)..."
 	PERSISTENCE_MODE=in-memory PYTHONPATH=src python -m pytest src/tests/integration/usecases/ src/tests/integration/aux/ -v --tb=short
 
-test-postgres:
-	@echo "🐘 Running PostgreSQL integration tests (Docker required)..."
-	@echo "🚀 Starting PostgreSQL container..."
-	@docker-compose up -d postgres
-	@echo "⏳ Waiting for PostgreSQL to be ready..."
-	@sleep 3
-	@echo "🧪 Running PostgreSQL integration tests..."
-	PERSISTENCE_MODE=postgres PYTHONPATH=src python -m pytest src/tests/integration/postgres/test_minimal.py src/tests/integration/postgres/test_basic_connection.py -v --tb=short
-	@echo "🛑 Stopping PostgreSQL container..."
-	@docker-compose down postgres
 
 test-all: test-unit test-integration
 	@echo "✅ All test suites completed successfully"
@@ -108,14 +95,6 @@ check: lint compile
 workflow: clean format lint compile test-unit test-integration
 	@echo "🎉 Full development workflow completed successfully!"
 
-# Database helpers
-db-up:
-	@echo "🐘 Starting PostgreSQL only..."
-	docker-compose up -d postgres
-
-db-shell:
-	@echo "🐚 Opening database shell..."
-	docker-compose exec postgres psql -U heimdall_user -d heimdall
 
 # Code Quality
 lint:
