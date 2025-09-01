@@ -28,9 +28,9 @@ async def test_basic_postgres_connection() -> None:
     expected_tables = ["users", "sessions", "permissions", "roles"]
 
     for table in expected_tables:
-        assert (
-            table in table_names
-        ), f"Table {table} not found. Available: {table_names}"
+        assert table in table_names, (
+            f"Table {table} not found. Available: {table_names}"
+        )
 
     await conn.close()
 

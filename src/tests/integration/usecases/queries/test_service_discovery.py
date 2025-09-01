@@ -1,5 +1,7 @@
 """Integration tests for service discovery and API documentation queries."""
 
+import time
+
 from tests.integration.aux.base_test import BaseQueryIntegrationTest
 
 
@@ -152,8 +154,6 @@ class TestServiceDiscoveryQueries(BaseQueryIntegrationTest):
 
     def test_service_discovery_performance(self):
         """Test that service discovery endpoints are fast."""
-        import time
-
         # Test root endpoint speed
         start_time = time.time()
         response = self.api.get_root()
@@ -163,9 +163,9 @@ class TestServiceDiscoveryQueries(BaseQueryIntegrationTest):
 
         # Should be very fast
         response_time = end_time - start_time
-        assert (
-            response_time < 0.05
-        ), f"Root endpoint took {response_time:.3f}s, expected < 0.05s"
+        assert response_time < 0.05, (
+            f"Root endpoint took {response_time:.3f}s, expected < 0.05s"
+        )
 
     def test_cors_headers_present(self):
         """Test that CORS headers are present for frontend integration."""

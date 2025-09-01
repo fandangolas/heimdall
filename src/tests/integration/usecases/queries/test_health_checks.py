@@ -1,5 +1,8 @@
 """Integration tests for health check queries."""
 
+import datetime
+import time
+
 from tests.integration.aux.base_test import BaseQueryIntegrationTest
 
 
@@ -20,8 +23,6 @@ class TestHealthCheckQueries(BaseQueryIntegrationTest):
         assert "version" in data
 
         # Timestamp should be in ISO format
-        import datetime
-
         datetime.datetime.fromisoformat(data["timestamp"].replace("Z", "+00:00"))
 
     def test_detailed_health_check(self):
@@ -78,8 +79,6 @@ class TestHealthCheckQueries(BaseQueryIntegrationTest):
 
     def test_health_checks_are_fast(self):
         """Test that health checks respond quickly (performance requirement)."""
-        import time
-
         # Test basic health check speed
         start_time = time.time()
         response = self.api.get_health()
@@ -89,9 +88,9 @@ class TestHealthCheckQueries(BaseQueryIntegrationTest):
 
         # Health check should be very fast (under 50ms)
         response_time = end_time - start_time
-        assert (
-            response_time < 0.05
-        ), f"Health check took {response_time:.3f}s, expected < 0.05s"
+        assert response_time < 0.05, (
+            f"Health check took {response_time:.3f}s, expected < 0.05s"
+        )
 
     def test_health_checks_independent_of_auth_state(self):
         """Test that health checks work regardless of authentication state."""
