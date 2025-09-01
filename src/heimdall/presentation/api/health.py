@@ -32,7 +32,7 @@ def get_system_info() -> dict[str, Any]:
     description="Basic health check endpoint for load balancer and monitoring",
 )
 async def health_check(
-    system_info: dict[str, Any] = Depends(get_system_info),
+    system_info: dict[str, Any] = Depends(get_system_info),  # noqa: B008
 ) -> HealthCheckResponseSchema:
     """Basic health check endpoint."""
     return HealthCheckResponseSchema(
@@ -48,7 +48,7 @@ async def health_check(
     description="Detailed health check with system information and dependency status",
 )
 async def detailed_health_check(
-    system_info: dict[str, Any] = Depends(get_system_info),
+    system_info: dict[str, Any] = Depends(get_system_info),  # noqa: B008
 ) -> JSONResponse:
     """Detailed health check with system and dependency information."""
     # TODO: Add actual dependency checks when implemented
