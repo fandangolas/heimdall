@@ -1,5 +1,7 @@
 """Tests for CQRS repository interface separation."""
 
+from heimdall.application.commands.auth_commands import Dependencies as CommandDeps
+from heimdall.application.queries.auth_queries import Dependencies as QueryDeps
 from heimdall.domain.repositories.read_repositories import ReadSessionRepository
 from heimdall.domain.repositories.write_repositories import (
     WriteSessionRepository,
@@ -60,11 +62,6 @@ class TestRepositoryInterfaceSeparation:
 
     def test_dependency_minimization_principle(self):
         """Test that read repositories enforce minimal dependencies principle."""
-        from heimdall.application.commands.auth_commands import (
-            Dependencies as CommandDeps,
-        )
-        from heimdall.application.queries.auth_queries import Dependencies as QueryDeps
-
         # Command dependencies should have more fields (full context)
         command_fields = set(CommandDeps._fields)
         query_fields = set(QueryDeps._fields)

@@ -3,7 +3,8 @@
 import pytest
 
 from heimdall.application.dto import RegisterRequest
-from heimdall.domain.value_objects import Email
+from heimdall.domain.entities import User
+from heimdall.domain.value_objects import Email, Password
 from tests.integration.aux.test_infrastructure import IntegrationTestBase
 
 
@@ -77,9 +78,6 @@ class TestInfrastructureIsolation(IntegrationTestBase):
         assert db._in_transaction
 
         # Add something to transaction state
-        from heimdall.domain.entities import User
-        from heimdall.domain.value_objects import Password
-
         test_user = User.create(Email("tx@example.com"), Password("Password123"))
         db.get_users()["tx@example.com"] = test_user
 

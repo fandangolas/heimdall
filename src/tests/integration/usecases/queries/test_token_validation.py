@@ -1,5 +1,7 @@
 """Integration tests for token validation query."""
 
+import time
+
 from tests.integration.aux.base_test import BaseQueryIntegrationTest
 
 
@@ -101,8 +103,6 @@ class TestTokenValidationQuery(BaseQueryIntegrationTest):
 
     def test_token_validation_performance_characteristics(self):
         """Test that token validation is fast (query optimization)."""
-        import time
-
         # Arrange
         token = self.api.register_and_login("perftest@example.com", "PerfTest123")
 

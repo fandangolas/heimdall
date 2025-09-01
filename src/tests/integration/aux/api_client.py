@@ -2,6 +2,12 @@
 
 from fastapi.testclient import TestClient
 
+from heimdall.presentation.api.dependencies import (
+    _EVENTS,
+    _SESSIONS,
+    _TOKEN_TO_SESSION,
+    _USERS,
+)
 from heimdall.presentation.api.main import app
 
 
@@ -15,13 +21,6 @@ class HeimdallAPIClient:
 
     def _clear_state(self):
         """Clear global state to ensure test isolation."""
-        from heimdall.presentation.api.dependencies import (
-            _EVENTS,
-            _SESSIONS,
-            _TOKEN_TO_SESSION,
-            _USERS,
-        )
-
         _USERS.clear()
         _SESSIONS.clear()
         _EVENTS.clear()

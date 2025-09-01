@@ -214,7 +214,6 @@ class TestTokenClaims:
             user_id="user-123",
             session_id="session-456",
             email="test@example.com",
-            issued_at=now,
             expires_at=expires,
         )
         assert claims.expires_at == expires
@@ -255,7 +254,6 @@ class TestTokenClaims:
             session_id="session-456",
             email="test@example.com",
             permissions=["read", "write"],
-            issued_at=now,
             expires_at=expires,
         )
 

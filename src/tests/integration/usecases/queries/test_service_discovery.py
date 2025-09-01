@@ -1,5 +1,7 @@
 """Integration tests for service discovery and API documentation queries."""
 
+import time
+
 from tests.integration.aux.base_test import BaseQueryIntegrationTest
 
 
@@ -152,8 +154,6 @@ class TestServiceDiscoveryQueries(BaseQueryIntegrationTest):
 
     def test_service_discovery_performance(self):
         """Test that service discovery endpoints are fast."""
-        import time
-
         # Test root endpoint speed
         start_time = time.time()
         response = self.api.get_root()

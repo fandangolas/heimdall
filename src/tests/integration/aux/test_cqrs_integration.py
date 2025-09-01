@@ -1,5 +1,7 @@
 """Integration tests for CQRS command/query interaction using hybrid infrastructure."""
 
+import asyncio
+
 import pytest
 
 from heimdall.application.dto import LoginRequest, RegisterRequest
@@ -88,8 +90,6 @@ class TestCQRSIntegration(IntegrationTestBase):
         _session2 = self.create_test_session(user2)  # Setup for testing
 
         # Act - Concurrent logins
-        import asyncio
-
         login1 = LoginRequest(email="user1@example.com", password="Password123")
         login2 = LoginRequest(email="user2@example.com", password="Password456")
 
