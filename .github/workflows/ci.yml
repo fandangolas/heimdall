@@ -52,6 +52,7 @@ jobs:
             uvicorn[standard] \
             pydantic \
             pydantic-settings \
+            email-validator \
             asyncpg \
             redis \
             "python-jose[cryptography]" \
@@ -124,6 +125,7 @@ jobs:
             uvicorn[standard] \
             pydantic \
             pydantic-settings \
+            email-validator \
             asyncpg \
             redis \
             "python-jose[cryptography]" \
@@ -177,6 +179,7 @@ jobs:
             uvicorn[standard] \
             pydantic \
             pydantic-settings \
+            email-validator \
             asyncpg \
             redis \
             "python-jose[cryptography]" \

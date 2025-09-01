@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 
 from heimdall.application.dto import LoginRequest, RegisterRequest
 from heimdall.domain.value_objects import Token
-from heimdall.presentation.api.dependencies import get_auth_functions
+from heimdall.presentation.api.dependencies import get_auth_functions_fastapi
 from heimdall.presentation.api.schemas import (
     ErrorResponseSchema,
     LoginRequestSchema,
@@ -33,7 +33,7 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 )
 async def login(
     request: LoginRequestSchema,
-    auth_functions: dict[str, Callable[..., Any]] = Depends(get_auth_functions),  # noqa: B008
+    auth_functions: dict[str, Callable[..., Any]] = Depends(get_auth_functions_fastapi),  # noqa: B008
 ) -> LoginResponseSchema:
     """Login endpoint for user authentication."""
     try:
@@ -76,7 +76,7 @@ async def login(
 )
 async def register(
     request: RegisterRequestSchema,
-    auth_functions: dict[str, Callable[..., Any]] = Depends(get_auth_functions),  # noqa: B008
+    auth_functions: dict[str, Callable[..., Any]] = Depends(get_auth_functions_fastapi),  # noqa: B008
 ) -> RegisterResponseSchema:
     """Registration endpoint for new user accounts."""
     try:
@@ -119,7 +119,7 @@ async def register(
 )
 async def validate_token(
     request: ValidateTokenRequestSchema,
-    auth_functions: dict[str, Callable[..., Any]] = Depends(get_auth_functions),  # noqa: B008
+    auth_functions: dict[str, Callable[..., Any]] = Depends(get_auth_functions_fastapi),  # noqa: B008
 ) -> ValidateTokenResponseSchema:
     """Token validation endpoint for authentication verification."""
     try:
@@ -167,7 +167,7 @@ async def get_current_user(
     authorization: str = Depends(
         lambda: None
     ),  # TODO: Extract from Authorization header
-    auth_functions: dict[str, Callable[..., Any]] = Depends(get_auth_functions),  # noqa: B008
+    auth_functions: dict[str, Callable[..., Any]] = Depends(get_auth_functions_fastapi),  # noqa: B008
 ) -> ValidateTokenResponseSchema:
     """Get current user information from JWT token in Authorization header."""
     if not authorization or not authorization.startswith("Bearer "):
