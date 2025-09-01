@@ -146,7 +146,6 @@ make test              # 140 tests in ~14s (unit + integration)
 # Specific test suites
 make test-unit         # 87 tests in ~5s (fast feedback)
 make test-integration  # 53 tests in ~9s (API integration)
-make test-postgres     # 3 tests in ~30s (database persistence, Docker)
 
 # Development workflows
 make quick             # Same as test-unit (fast development)
@@ -162,8 +161,6 @@ PYTHONPATH=src python -m pytest src/tests/unit/ -v
 # Integration tests (in-memory)
 PERSISTENCE_MODE=in-memory PYTHONPATH=src python -m pytest src/tests/integration/usecases/ src/tests/integration/aux/ -v
 
-# PostgreSQL tests (requires Docker)
-make test-postgres     # Manages Docker lifecycle automatically
 ```
 
 ### Test Coverage
@@ -171,8 +168,7 @@ make test-postgres     # Manages Docker lifecycle automatically
 - **53 Integration Tests**: Full-stack API testing through FastAPI endpoints
   - Commands: Write operations (login, register) - 1% traffic
   - Queries: Read operations (token validation, health checks) - 99% traffic
-- **3 PostgreSQL Tests**: Complete database persistence with Docker management
-- **Total: 143 automated tests** with comprehensive coverage
+- **Total: 140 automated tests** with comprehensive coverage
 
 ## 📖 Documentation
 
@@ -369,18 +365,8 @@ make compile  # Type checking + validation
 
 ##### PostgreSQL Mode  
 ```bash
-# Start PostgreSQL with Docker
-make db-up    # Start PostgreSQL container only
-
-# Test PostgreSQL integration (manages Docker lifecycle)
-make test-postgres  # 3 tests with automatic container management
-
 # Start development server with PostgreSQL persistence  
 PERSISTENCE_MODE=postgres make dev
-
-# Database utilities
-make db-shell   # Open PostgreSQL shell
-make db-up      # Start database only
 make db-down    # Stop all services
 ```
 

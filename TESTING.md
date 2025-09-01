@@ -38,16 +38,12 @@ make test              # 140 tests in ~14s (unit + integration)
 # Specific test suites
 make test-unit         # 87 tests in ~5s (fast, no dependencies)
 make test-integration  # 53 tests in ~9s (in-memory, no dependencies)  
-make test-postgres     # 3 tests in ~30s (Docker managed automatically)
 
 # Development workflows
 make quick             # Same as test-unit (fast development)
 make workflow          # Full development pipeline (format → lint → compile → test)
 make ci-test           # Complete CI validation (clean → check → test-all)
 
-# Database utilities
-make db-up             # Start PostgreSQL container only
-make db-shell          # Open PostgreSQL shell
 ```
 
 ### Manual Commands (Advanced)
@@ -59,8 +55,6 @@ PYTHONPATH=src python -m pytest src/tests/unit/ -v
 # Integration tests with in-memory persistence
 PERSISTENCE_MODE=in-memory PYTHONPATH=src python -m pytest src/tests/integration/usecases/ src/tests/integration/aux/ -v
 
-# PostgreSQL tests (requires database running)
-PERSISTENCE_MODE=postgres PYTHONPATH=src python -m pytest src/tests/integration/postgres/ -v
 
 # All tests with coverage
 PYTHONPATH=src python -m pytest src/tests/ --cov=heimdall --cov-report=html
@@ -74,14 +68,12 @@ PYTHONPATH=src python -m pytest src/tests/ --cov=heimdall --cov-report=html
 |------------|--------|---------|---------|--------------|
 | **Unit Tests** | 87 | ✅ Pass | ~5s | None |
 | **Integration Tests** | 53 | ✅ Pass | ~9s | None |  
-| **PostgreSQL Tests** | 3 | ✅ Pass | ~30s | Docker (managed automatically) |
 
-**Total: 143 automated tests passing**
+**Total: 140 automated tests passing**
 
 ### 📊 Test Breakdown
-- **make test**: 140 tests (87 unit + 53 integration) - comprehensive validation without Docker
-- **make test-postgres**: 3 additional tests - database persistence with Docker lifecycle management
-- **Complete coverage**: All layers from domain logic to database persistence
+- **make test**: 140 tests (87 unit + 53 integration) - comprehensive validation without external dependencies
+- **Complete coverage**: All layers from domain logic to API integration
 
 ## 🛠️ Enhanced Development Commands
 
@@ -169,14 +161,12 @@ make workflow          # Full pipeline: format → lint → compile → test
 
 ### 3. **Before Deploy**
 ```bash
-make test-postgres     # Database integration (3 tests, Docker managed)
 make ci-test           # Complete CI validation
 ```
 
 ### 4. **CI/CD Pipeline**
 ```bash
-make test              # 140 tests without Docker dependencies
-make test-postgres     # Database tests in containerized environment (when available)
+make test              # 140 tests without external dependencies
 ```
 
 ## Troubleshooting

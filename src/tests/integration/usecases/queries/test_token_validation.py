@@ -119,9 +119,9 @@ class TestTokenValidationQuery(BaseQueryIntegrationTest):
         # This is a basic performance check - in production would use
         # proper benchmarking
         validation_time = end_time - start_time
-        assert (
-            validation_time < 0.1
-        ), f"Token validation took {validation_time:.3f}s, expected < 0.1s"
+        assert validation_time < 0.1, (
+            f"Token validation took {validation_time:.3f}s, expected < 0.1s"
+        )
 
     def test_concurrent_token_validations(self):
         """Test concurrent token validation requests."""

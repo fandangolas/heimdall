@@ -163,9 +163,9 @@ class TestServiceDiscoveryQueries(BaseQueryIntegrationTest):
 
         # Should be very fast
         response_time = end_time - start_time
-        assert (
-            response_time < 0.05
-        ), f"Root endpoint took {response_time:.3f}s, expected < 0.05s"
+        assert response_time < 0.05, (
+            f"Root endpoint took {response_time:.3f}s, expected < 0.05s"
+        )
 
     def test_cors_headers_present(self):
         """Test that CORS headers are present for frontend integration."""
