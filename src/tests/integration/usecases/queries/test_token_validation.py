@@ -2,21 +2,29 @@
 
 import time
 
-from tests.integration.aux.base_test import BaseQueryIntegrationTest
+import pytest
+
+from tests.integration.postgres.base_test import BasePostgreSQLQueryTest
 
 
-class TestTokenValidationQuery(BaseQueryIntegrationTest):
+class TestTokenValidationQuery(BasePostgreSQLQueryTest):
     """Test token validation through API endpoints (read operations)."""
 
-    def test_valid_token_validation(self):
+    @pytest.mark.asyncio
+    async def test_valid_token_validation(self):
         """Test validation of a valid token through API."""
         # Arrange - Get a valid token
         email = "tokenuser@example.com"
         password = "TokenPassword123"
-        token = self.api.register_and_login(email, password)
+
+        register_response = await self.api.register_user(email, password)
+        assert register_response.status_code == 200
+        login_response = await self.api.login_user(email, password)
+        assert login_response.status_code == 200
+        token = login_response.json()["access_token"]
 
         # Act
-        response = self.api.validate_token(token)
+        response = await self.api.validate_token(token)
 
         # Assert
         assert response.status_code == 200
@@ -28,10 +36,11 @@ class TestTokenValidationQuery(BaseQueryIntegrationTest):
         assert isinstance(data["permissions"], list)
         assert data["error"] is None
 
-    def test_invalid_token_validation(self):
+    @pytest.mark.asyncio
+    async def test_invalid_token_validation(self):
         """Test validation of invalid token."""
         # Act
-        response = self.api.validate_token("invalid.jwt.token")
+        response = await self.api.validate_token("invalid.jwt.token")
 
         # Assert
         assert (
@@ -45,10 +54,11 @@ class TestTokenValidationQuery(BaseQueryIntegrationTest):
         assert data["permissions"] == []
         assert data["error"] is not None
 
-    def test_malformed_token_validation(self):
+    @pytest.mark.asyncio
+    async def test_malformed_token_validation(self):
         """Test validation of malformed token."""
         # Act
-        response = self.api.validate_token("not-a-jwt-token-at-all")
+        response = await self.api.validate_token("not-a-jwt-token-at-all")
 
         # Assert
         assert response.status_code == 200
@@ -57,10 +67,11 @@ class TestTokenValidationQuery(BaseQueryIntegrationTest):
         assert data["is_valid"] is False
         assert data["error"] is not None
 
-    def test_empty_token_validation(self):
+    @pytest.mark.asyncio
+    async def test_empty_token_validation(self):
         """Test validation of empty token."""
         # Act
-        response = self.api.validate_token("")
+        response = await self.api.validate_token("")
 
         # Assert
         assert response.status_code == 200
@@ -69,29 +80,36 @@ class TestTokenValidationQuery(BaseQueryIntegrationTest):
         assert data["is_valid"] is False
         assert data["error"] is not None
 
-    def test_token_validation_request_format(self):
+    @pytest.mark.asyncio
+    async def test_token_validation_request_format(self):
         """Test token validation request format requirements."""
         # Missing token field
-        response = self.api.client.post("/auth/validate", json={})
+        response = await self.api.post("/auth/validate", json={})
         assert response.status_code == 422
 
         # Invalid request format
-        response = self.api.client.post(
+        response = await self.api.post(
             "/auth/validate", json={"invalid_field": "value"}
         )
         assert response.status_code == 422
 
-    def test_multiple_token_validations_same_token(self):
+    @pytest.mark.asyncio
+    async def test_multiple_token_validations_same_token(self):
         """Test that the same token can be validated multiple times."""
         # Arrange
-        token = self.api.register_and_login(
-            "multivalidate@example.com", "MultiValidate123"
-        )
+        email = "multivalidate@example.com"
+        password = "MultiValidate123"
+
+        register_response = await self.api.register_user(email, password)
+        assert register_response.status_code == 200
+        login_response = await self.api.login_user(email, password)
+        assert login_response.status_code == 200
+        token = login_response.json()["access_token"]
 
         # Act - Validate same token multiple times
         responses = []
         for _ in range(5):
-            response = self.api.validate_token(token)
+            response = await self.api.validate_token(token)
             responses.append(response)
 
         # Assert - All should succeed with same result
@@ -101,14 +119,22 @@ class TestTokenValidationQuery(BaseQueryIntegrationTest):
             assert data["is_valid"] is True
             assert data["email"] == "multivalidate@example.com"
 
-    def test_token_validation_performance_characteristics(self):
+    @pytest.mark.asyncio
+    async def test_token_validation_performance_characteristics(self):
         """Test that token validation is fast (query optimization)."""
         # Arrange
-        token = self.api.register_and_login("perftest@example.com", "PerfTest123")
+        email = "perftest@example.com"
+        password = "PerfTest123"
+
+        register_response = await self.api.register_user(email, password)
+        assert register_response.status_code == 200
+        login_response = await self.api.login_user(email, password)
+        assert login_response.status_code == 200
+        token = login_response.json()["access_token"]
 
         # Act - Measure validation time
         start_time = time.time()
-        response = self.api.validate_token(token)
+        response = await self.api.validate_token(token)
         end_time = time.time()
 
         # Assert
@@ -123,15 +149,23 @@ class TestTokenValidationQuery(BaseQueryIntegrationTest):
             f"Token validation took {validation_time:.3f}s, expected < 0.1s"
         )
 
-    def test_concurrent_token_validations(self):
+    @pytest.mark.asyncio
+    async def test_concurrent_token_validations(self):
         """Test concurrent token validation requests."""
         # Arrange
-        token = self.api.register_and_login("concurrent@example.com", "Concurrent123")
+        email = "concurrent@example.com"
+        password = "Concurrent123"
 
-        # Act - Rapid sequential validations (simulating concurrency)
+        register_response = await self.api.register_user(email, password)
+        assert register_response.status_code == 200
+        login_response = await self.api.login_user(email, password)
+        assert login_response.status_code == 200
+        token = login_response.json()["access_token"]
+
+        # Act - Rapid sequential validations
         responses = []
         for _ in range(10):
-            response = self.api.validate_token(token)
+            response = await self.api.validate_token(token)
             responses.append(response)
 
         # Assert - All should succeed
@@ -140,13 +174,21 @@ class TestTokenValidationQuery(BaseQueryIntegrationTest):
             data = response.json()
             assert data["is_valid"] is True
 
-    def test_token_validation_response_fields(self):
+    @pytest.mark.asyncio
+    async def test_token_validation_response_fields(self):
         """Test that token validation response contains all required fields."""
         # Arrange
-        token = self.api.register_and_login("fields@example.com", "Fields123")
+        email = "fields@example.com"
+        password = "Fields123"
+
+        register_response = await self.api.register_user(email, password)
+        assert register_response.status_code == 200
+        login_response = await self.api.login_user(email, password)
+        assert login_response.status_code == 200
+        token = login_response.json()["access_token"]
 
         # Act
-        response = self.api.validate_token(token)
+        response = await self.api.validate_token(token)
 
         # Assert
         assert response.status_code == 200
@@ -170,15 +212,25 @@ class TestTokenValidationQuery(BaseQueryIntegrationTest):
             assert isinstance(data["permissions"], list)
             assert isinstance(data["error"], str)
 
-    def test_token_validation_different_users(self):
+    @pytest.mark.asyncio
+    async def test_token_validation_different_users(self):
         """Test token validation for different users."""
         # Arrange - Create multiple users
-        token1 = self.api.register_and_login("user1@example.com", "Password123")
-        token2 = self.api.register_and_login("user2@example.com", "Password123")
+        register1 = await self.api.register_user("user1@example.com", "Password123")
+        assert register1.status_code == 200
+        login1 = await self.api.login_user("user1@example.com", "Password123")
+        assert login1.status_code == 200
+        token1 = login1.json()["access_token"]
+
+        register2 = await self.api.register_user("user2@example.com", "Password123")
+        assert register2.status_code == 200
+        login2 = await self.api.login_user("user2@example.com", "Password123")
+        assert login2.status_code == 200
+        token2 = login2.json()["access_token"]
 
         # Act
-        response1 = self.api.validate_token(token1)
-        response2 = self.api.validate_token(token2)
+        response1 = await self.api.validate_token(token1)
+        response2 = await self.api.validate_token(token2)
 
         # Assert
         assert response1.status_code == 200

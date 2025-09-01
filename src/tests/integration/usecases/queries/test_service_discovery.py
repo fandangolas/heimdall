@@ -2,16 +2,19 @@
 
 import time
 
-from tests.integration.aux.base_test import BaseQueryIntegrationTest
+import pytest
+
+from tests.integration.postgres.base_test import BasePostgreSQLQueryTest
 
 
-class TestServiceDiscoveryQueries(BaseQueryIntegrationTest):
+class TestServiceDiscoveryQueries(BasePostgreSQLQueryTest):
     """Test service discovery endpoints (read operations for API exploration)."""
 
-    def test_root_endpoint_service_information(self):
+    @pytest.mark.asyncio
+    async def test_root_endpoint_service_information(self):
         """Test root endpoint returns comprehensive service information."""
         # Act
-        response = self.api.get_root()
+        response = await self.api.get_root()
 
         # Assert
         assert response.status_code == 200
@@ -44,10 +47,11 @@ class TestServiceDiscoveryQueries(BaseQueryIntegrationTest):
             assert endpoint in auth_endpoints
             assert auth_endpoints[endpoint].startswith("/")
 
-    def test_openapi_schema_generation(self):
+    @pytest.mark.asyncio
+    async def test_openapi_schema_generation(self):
         """Test that OpenAPI schema is properly generated and accessible."""
         # Act
-        response = self.api.get_openapi_schema()
+        response = await self.api.get("/openapi.json")
 
         # Assert
         assert response.status_code == 200
@@ -71,20 +75,22 @@ class TestServiceDiscoveryQueries(BaseQueryIntegrationTest):
         for path in expected_paths:
             assert path in paths, f"Missing path in OpenAPI: {path}"
 
-    def test_api_documentation_accessibility(self):
+    @pytest.mark.asyncio
+    async def test_api_documentation_accessibility(self):
         """Test that API documentation endpoints are accessible."""
         # Test Swagger UI
-        docs_response = self.api.client.get("/docs")
+        docs_response = await self.api.get("/docs")
         assert docs_response.status_code == 200
 
         # Test ReDoc
-        redoc_response = self.api.client.get("/redoc")
+        redoc_response = await self.api.get("/redoc")
         assert redoc_response.status_code == 200
 
-    def test_openapi_schema_includes_authentication_flows(self):
+    @pytest.mark.asyncio
+    async def test_openapi_schema_includes_authentication_flows(self):
         """Test that OpenAPI schema documents authentication flows."""
         # Act
-        response = self.api.get_openapi_schema()
+        response = await self.api.get("/openapi.json")
 
         # Assert
         assert response.status_code == 200
@@ -107,10 +113,11 @@ class TestServiceDiscoveryQueries(BaseQueryIntegrationTest):
         assert "200" in responses  # Success
         assert "400" in responses or "422" in responses  # Error cases
 
-    def test_openapi_schema_includes_response_models(self):
+    @pytest.mark.asyncio
+    async def test_openapi_schema_includes_response_models(self):
         """Test that OpenAPI schema includes proper response models."""
         # Act
-        response = self.api.get_openapi_schema()
+        response = await self.api.get("/openapi.json")
 
         # Assert
         assert response.status_code == 200
@@ -133,12 +140,13 @@ class TestServiceDiscoveryQueries(BaseQueryIntegrationTest):
         for schema_name in expected_schemas:
             assert schema_name in schemas, f"Missing schema: {schema_name}"
 
-    def test_service_version_consistency(self):
+    @pytest.mark.asyncio
+    async def test_service_version_consistency(self):
         """Test that service version is consistent across endpoints."""
         # Act
-        root_response = self.api.get_root()
-        health_response = self.api.get_detailed_health()
-        openapi_response = self.api.get_openapi_schema()
+        root_response = await self.api.get_root()
+        health_response = await self.api.get_health_detailed()
+        openapi_response = await self.api.get("/openapi.json")
 
         # Assert
         assert root_response.status_code == 200
@@ -152,11 +160,12 @@ class TestServiceDiscoveryQueries(BaseQueryIntegrationTest):
         # All versions should be identical
         assert root_version == health_version == openapi_version
 
-    def test_service_discovery_performance(self):
+    @pytest.mark.asyncio
+    async def test_service_discovery_performance(self):
         """Test that service discovery endpoints are fast."""
         # Test root endpoint speed
         start_time = time.time()
-        response = self.api.get_root()
+        response = await self.api.get_root()
         end_time = time.time()
 
         assert response.status_code == 200
@@ -167,10 +176,11 @@ class TestServiceDiscoveryQueries(BaseQueryIntegrationTest):
             f"Root endpoint took {response_time:.3f}s, expected < 0.05s"
         )
 
-    def test_cors_headers_present(self):
+    @pytest.mark.asyncio
+    async def test_cors_headers_present(self):
         """Test that CORS headers are present for frontend integration."""
         # Act
-        response = self.api.get_root()
+        response = await self.api.get_root()
 
         # Assert
         assert response.status_code == 200
@@ -182,12 +192,13 @@ class TestServiceDiscoveryQueries(BaseQueryIntegrationTest):
         # The main test is that the request succeeds, indicating CORS is configured
         # In a real browser environment, CORS headers would be properly validated
 
-    def test_content_type_headers(self):
+    @pytest.mark.asyncio
+    async def test_content_type_headers(self):
         """Test that endpoints return proper content-type headers."""
         # Act
-        root_response = self.api.get_root()
-        health_response = self.api.get_health()
-        openapi_response = self.api.get_openapi_schema()
+        root_response = await self.api.get_root()
+        health_response = await self.api.get_health()
+        openapi_response = await self.api.get("/openapi.json")
 
         # Assert
         assert root_response.status_code == 200
