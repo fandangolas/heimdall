@@ -87,11 +87,11 @@ jobs:
       postgres:
         image: postgres:15
         env:
-          POSTGRES_DB: heimdall_test
-          POSTGRES_USER: heimdall
-          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: heimdall
+          POSTGRES_USER: heimdall_user
+          POSTGRES_PASSWORD: heimdall_secure_password
         options: >-
-          --health-cmd pg_isready
+          --health-cmd "pg_isready -U heimdall_user -d heimdall"
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
@@ -139,7 +139,14 @@ jobs:
 
       - name: Wait for PostgreSQL
         run: |
-          timeout 60s bash -c 'until pg_isready -h localhost -p 5432 -U heimdall; do sleep 2; done'
+          timeout 60s bash -c 'until pg_isready -h localhost -p 5432 -U heimdall_user -d heimdall; do sleep 2; done'
+
+      - name: Initialize PostgreSQL schema
+        run: |
+          echo "🗄️ Initializing PostgreSQL database schema..."
+          # Run the initialization script
+          PGPASSWORD=heimdall_secure_password psql -h localhost -U heimdall_user -d heimdall -f migrations/init.sql
+          echo "✅ Database schema initialized successfully"
 
       - name: Run integration tests (non-postgres)
         run: |
@@ -149,15 +156,14 @@ jobs:
       - name: Run integration tests (postgres)
         run: |
           export PYTHONPATH=${{ github.workspace }}/src
-          export DATABASE_URL="postgresql://heimdall:test_password@localhost:5432/heimdall_test"
+          export DATABASE_URL="postgresql://heimdall_user:heimdall_secure_password@localhost:5432/heimdall"
           python -m pytest src/tests/integration/postgres/ -v --tb=short
-        continue-on-error: true  # PostgreSQL tests may have setup issues
 
       - name: Run API integration tests
         run: |
           export PYTHONPATH=${{ github.workspace }}/src
+          export DATABASE_URL="postgresql://heimdall_user:heimdall_secure_password@localhost:5432/heimdall"
           python -m pytest src/tests/integration/usecases/ -v --tb=short
-        continue-on-error: true  # API tests may have FastAPI configuration issues
 
   build-verify:
     name: Build & Import Verification
