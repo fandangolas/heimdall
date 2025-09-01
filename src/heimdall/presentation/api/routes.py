@@ -33,7 +33,7 @@ router = APIRouter(prefix="/auth", tags=["authentication"])
 )
 async def login(
     request: LoginRequestSchema,
-    auth_functions: dict[str, Callable[..., Any]] = Depends(get_auth_functions),
+    auth_functions: dict[str, Callable[..., Any]] = Depends(get_auth_functions),  # noqa: B008
 ) -> LoginResponseSchema:
     """Login endpoint for user authentication."""
     try:
@@ -49,19 +49,19 @@ async def login(
         # Convert domain response to API schema
         return LoginResponseSchema(
             access_token=response.access_token,
-            token_type="bearer",
+            token_type="bearer",  # noqa: S106
         )
 
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from None
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
-        )
+        ) from None
 
 
 @router.post(
@@ -76,7 +76,7 @@ async def login(
 )
 async def register(
     request: RegisterRequestSchema,
-    auth_functions: dict[str, Callable[..., Any]] = Depends(get_auth_functions),
+    auth_functions: dict[str, Callable[..., Any]] = Depends(get_auth_functions),  # noqa: B008
 ) -> RegisterResponseSchema:
     """Registration endpoint for new user accounts."""
     try:
@@ -100,12 +100,12 @@ async def register(
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=str(e),
-        )
+        ) from None
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Internal server error",
-        )
+        ) from None
 
 
 @router.post(
@@ -119,7 +119,7 @@ async def register(
 )
 async def validate_token(
     request: ValidateTokenRequestSchema,
-    auth_functions: dict[str, Callable[..., Any]] = Depends(get_auth_functions),
+    auth_functions: dict[str, Callable[..., Any]] = Depends(get_auth_functions),  # noqa: B008
 ) -> ValidateTokenResponseSchema:
     """Token validation endpoint for authentication verification."""
     try:
@@ -167,7 +167,7 @@ async def get_current_user(
     authorization: str = Depends(
         lambda: None
     ),  # TODO: Extract from Authorization header
-    auth_functions: dict[str, Callable[..., Any]] = Depends(get_auth_functions),
+    auth_functions: dict[str, Callable[..., Any]] = Depends(get_auth_functions),  # noqa: B008
 ) -> ValidateTokenResponseSchema:
     """Get current user information from JWT token in Authorization header."""
     if not authorization or not authorization.startswith("Bearer "):
@@ -208,4 +208,4 @@ async def get_current_user(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Token validation failed",
             headers={"WWW-Authenticate": "Bearer"},
-        )
+        ) from None
