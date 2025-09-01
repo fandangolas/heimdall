@@ -1,0 +1,19 @@
+# Safety Security Policy Configuration
+# This file documents accepted security vulnerabilities and their justification
+
+security:
+  # Known vulnerabilities that are accepted risks
+  ignore-vulnerabilities:
+    # GHSA-wj6h-64fc-37mp: ecdsa timing attack vulnerability
+    # This is a timing attack in the ecdsa library used by python-jose
+    # Risk accepted because:
+    # 1. It's a timing attack (requires local access and precise timing measurements)
+    # 2. python-ecdsa considers side-channel attacks out of scope
+    # 3. Our current implementation uses mock JWT tokens for development
+    # 4. In production, consider migrating to PyJWT which doesn't have this dependency
+    - vulnerability-id: GHSA-wj6h-64fc-37mp
+      reason: Timing attack in ecdsa - accepted risk for development environment
+      expires: '2025-12-31'
+
+  # Continue to fail on critical vulnerabilities
+  continue-on-vulnerability-error: false
