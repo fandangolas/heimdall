@@ -120,11 +120,11 @@ db-shell:
 # Code Quality
 lint:
 	@echo "🔍 Running code linting with ruff..."
-	@ruff check src/ || (echo "⚠️ Install ruff: pip install ruff" && exit 1)
+	@ruff check . || (echo "⚠️ Install ruff: pip install ruff" && exit 1)
 
 format:
 	@echo "🎨 Formatting code with ruff..."
-	@ruff format src/ || (echo "⚠️ Install ruff: pip install ruff" && exit 1)
+	@ruff format . || (echo "⚠️ Install ruff: pip install ruff" && exit 1)
 
 compile:
 	@echo "🔧 Type checking and validation..."
