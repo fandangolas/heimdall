@@ -136,6 +136,12 @@ jobs:
           done
           echo "PostgreSQL is ready!"
 
+      - name: Initialize database schema
+        run: |
+          echo "🔧 Initializing database schema for CI testing..."
+          PGPASSWORD=heimdall_secure_password psql -h localhost -U heimdall_user -d heimdall -f migrations/init-test.sql
+          echo "✅ Database schema initialized"
+
       - name: Run PostgreSQL integration tests
         run: |
           export PYTHONPATH=${{ github.workspace }}/src
