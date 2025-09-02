@@ -11,7 +11,7 @@ class BasePostgreSQLIntegrationTest:
         """Setup PostgreSQL API client for each test."""
         self.api = postgres_api_client
         yield
-        # Cleanup is handled by the postgres_api_client fixture (transaction rollback)
+        # Cleanup is handled by the postgres_api_client fixture (database cleanup)
 
 
 class BasePostgreSQLCommandTest(BasePostgreSQLIntegrationTest):

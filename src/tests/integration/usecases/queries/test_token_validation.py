@@ -30,6 +30,8 @@ class TestTokenValidationQuery(BasePostgreSQLQueryTest):
         assert response.status_code == 200
 
         data = response.json()
+        print(f"Debug - Token validation response: {data}")
+        print(f"Debug - Token: {token}")
         assert data["is_valid"] is True
         assert data["user_id"] is not None
         assert data["email"] == email

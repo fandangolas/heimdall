@@ -11,7 +11,6 @@ import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
 
 from heimdall.infrastructure.persistence.postgres.database import (
-    close_database,
     initialize_database,
 )
 from heimdall.presentation.api.main import create_app
@@ -125,20 +124,18 @@ class PostgreSQLAPIClient:
         """Clean up the client and database connections."""
         if self.client:
             await self.client.aclose()
-        await close_database()
+        # Don't close database connections - we're using a persistent container
 
-    async def begin_transaction(self):
-        """Start a database transaction for test isolation."""
-        self.conn = await asyncpg.connect(self.db_url)
-        self.transaction = self.conn.transaction()
-        await self.transaction.start()
-
-    async def rollback_transaction(self):
-        """Rollback the database transaction."""
-        if hasattr(self, "transaction"):
-            await self.transaction.rollback()
-        if hasattr(self, "conn"):
-            await self.conn.close()
+    async def cleanup_database(self):
+        """Clean up database for test isolation."""
+        conn = await asyncpg.connect(self.db_url)
+        try:
+            # Delete all test data to ensure clean state
+            await conn.execute("DELETE FROM sessions")
+            await conn.execute("DELETE FROM users")
+            await conn.execute("DELETE FROM audit_events")
+        finally:
+            await conn.close()
 
     # HTTP Client Methods
     async def get(self, url: str, **kwargs) -> httpx.Response:
@@ -228,21 +225,24 @@ def postgres_app():
     """Create FastAPI app configured for PostgreSQL mode."""
     # Set environment for PostgreSQL
     os.environ["PERSISTENCE_MODE"] = "postgres"
+    os.environ["DATABASE_URL"] = (
+        "postgresql://heimdall_user:heimdall_secure_password@localhost:5432/heimdall"
+    )
     app = create_app()
     return app
 
 
 @pytest_asyncio.fixture
 async def postgres_api_client(postgres_app):
-    """Create PostgreSQL API client with transaction-based isolation."""
+    """Create PostgreSQL API client with database cleanup for test isolation."""
     client = PostgreSQLAPIClient(postgres_app)
     await client.start()
 
-    # Start transaction for test isolation
-    await client.begin_transaction()
+    # Clean database before test
+    await client.cleanup_database()
 
     yield client
 
-    # Rollback transaction and cleanup
-    await client.rollback_transaction()
+    # Clean database after test and close connections
+    await client.cleanup_database()
     await client.stop()
