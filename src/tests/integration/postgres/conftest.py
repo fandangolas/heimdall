@@ -99,6 +99,12 @@ class PostgreSQLTestManager:
         if not self.container_started:
             return
 
+        # Skip Docker container management in CI - GitHub Actions handles cleanup
+        if os.getenv("CI") or os.getenv("GITHUB_ACTIONS"):
+            print("🔧 Running in CI - GitHub Actions will handle PostgreSQL cleanup")
+            self.container_started = False
+            return
+
         try:
             print("🛑 Stopping PostgreSQL container...")
             subprocess.run(["docker-compose", "down"], check=True, capture_output=True)
