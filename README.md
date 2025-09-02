@@ -125,27 +125,28 @@ src/
 │           └── health.py    # Health check endpoints
 └── tests/
     ├── unit/           # 87 tests - Domain & CQRS logic
-    └── integration/    # 56 tests - Full-stack API testing
+    └── integration/    # 55 tests - Full-stack API testing (dual-mode)
         ├── aux/        # Test infrastructure (8 tests)
-        ├── usecases/   # Organized by CQRS patterns (45 tests)
+        ├── usecases/   # Organized by CQRS patterns (47 tests)
         │   ├── commands/  # Write operation tests
         │   └── queries/   # Read operation tests
-        └── postgres/   # PostgreSQL-specific tests (3 tests)
-            ├── test_minimal.py        # Repository functionality
-            ├── test_basic_connection.py # Database connectivity
-            └── test_database_persistence.py # Advanced scenarios
+        └── postgres/   # PostgreSQL-specific base classes & utilities
+            ├── base_test.py       # PostgreSQL test base classes
+            ├── conftest.py        # PostgreSQL test fixtures
+            └── test_*.py          # Basic PostgreSQL functionality tests
 ```
 
-## 🧪 Testing (143 Total Tests)
+## 🧪 Testing (142 Total Tests)
 
 ### Quick Commands (Makefile)
 ```bash
 # Default: Run all test suites (comprehensive, no Docker)
-make test              # 140 tests in ~14s (unit + integration)
+make test              # 142 tests in ~14s (unit + integration)
 
 # Specific test suites
 make test-unit         # 87 tests in ~5s (fast feedback)
-make test-integration  # 53 tests in ~9s (API integration)
+make test-integration  # 55 tests in ~9s (API integration, in-memory)
+make test-postgres     # 55 tests in ~15s (PostgreSQL integration, requires Docker)
 
 # Development workflows
 make quick             # Same as test-unit (fast development)
@@ -161,14 +162,34 @@ PYTHONPATH=src python -m pytest src/tests/unit/ -v
 # Integration tests (in-memory)
 PERSISTENCE_MODE=in-memory PYTHONPATH=src python -m pytest src/tests/integration/usecases/ src/tests/integration/aux/ -v
 
+# PostgreSQL integration tests (requires Docker)
+PERSISTENCE_MODE=postgres PYTHONPATH=src python -m pytest src/tests/integration/ -v
 ```
 
 ### Test Coverage
 - **87 Unit Tests**: Domain entities, CQRS commands/queries, value objects, events
-- **53 Integration Tests**: Full-stack API testing through FastAPI endpoints
+- **55 Integration Tests**: Full-stack API testing through FastAPI endpoints
   - Commands: Write operations (login, register) - 1% traffic
   - Queries: Read operations (token validation, health checks) - 99% traffic
-- **Total: 140 automated tests** with comprehensive coverage
+  - **Dual Mode**: Same tests run with both in-memory and PostgreSQL persistence
+- **Total: 142 automated tests** with comprehensive coverage
+
+### PostgreSQL Integration Testing
+The same integration tests run in both persistence modes for complete validation:
+
+```bash
+# In-memory mode (default) - fast, no dependencies
+make test-integration
+
+# PostgreSQL mode - production-like, requires Docker
+make test-postgres
+```
+
+**Key Features:**
+- **Database Isolation**: Each test starts with a clean database state
+- **Real JWT Tokens**: Proper token validation with database session lookup
+- **ACID Compliance**: Tests verify database constraints and transactions
+- **Container Management**: Automatic PostgreSQL container lifecycle
 
 ## 📖 Documentation
 

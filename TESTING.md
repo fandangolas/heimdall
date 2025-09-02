@@ -17,15 +17,16 @@ Heimdall uses a **dual-persistence architecture** with separate test environment
 - **Purpose**: Test full API flows, CQRS integration, and cross-layer functionality
 - **Persistence**: Uses `PERSISTENCE_MODE=in-memory` by default
 - **Dependencies**: No external services required
-- **Speed**: ~9 seconds for 53 tests
+- **Speed**: ~9 seconds for 55 tests
 - **Coverage**: Full-stack FastAPI endpoint testing
 
 ### 🐘 PostgreSQL Integration Tests (Production-Like)
 - **Purpose**: Test database persistence, functional mappers, and real database constraints
 - **Persistence**: Uses `PERSISTENCE_MODE=postgres`
 - **Dependencies**: Requires PostgreSQL via Docker
-- **Speed**: Variable (depends on database)
-- **Coverage**: Real database persistence and ACID compliance
+- **Speed**: ~15 seconds for 55 tests (same tests as integration, but with PostgreSQL)
+- **Coverage**: Real database persistence, ACID compliance, and production-like scenarios
+- **Isolation**: Database cleanup between tests for reliable isolation
 
 ## Running Tests
 
@@ -33,11 +34,12 @@ Heimdall uses a **dual-persistence architecture** with separate test environment
 
 ```bash
 # Default: Run all test suites (comprehensive, no Docker)
-make test              # 140 tests in ~14s (unit + integration)
+make test              # 142 tests in ~14s (unit + integration)
 
 # Specific test suites
 make test-unit         # 87 tests in ~5s (fast, no dependencies)
-make test-integration  # 53 tests in ~9s (in-memory, no dependencies)  
+make test-integration  # 55 tests in ~9s (in-memory, no dependencies)
+make test-postgres     # 55 tests in ~15s (PostgreSQL, requires Docker)
 
 # Development workflows
 make quick             # Same as test-unit (fast development)
@@ -55,6 +57,8 @@ PYTHONPATH=src python -m pytest src/tests/unit/ -v
 # Integration tests with in-memory persistence
 PERSISTENCE_MODE=in-memory PYTHONPATH=src python -m pytest src/tests/integration/usecases/ src/tests/integration/aux/ -v
 
+# PostgreSQL integration tests (requires Docker)
+PERSISTENCE_MODE=postgres PYTHONPATH=src python -m pytest src/tests/integration/ -v
 
 # All tests with coverage
 PYTHONPATH=src python -m pytest src/tests/ --cov=heimdall --cov-report=html
@@ -67,13 +71,15 @@ PYTHONPATH=src python -m pytest src/tests/ --cov=heimdall --cov-report=html
 | Test Suite | Count | Status | Runtime | Dependencies |
 |------------|--------|---------|---------|--------------|
 | **Unit Tests** | 87 | ✅ Pass | ~5s | None |
-| **Integration Tests** | 53 | ✅ Pass | ~9s | None |  
+| **Integration Tests** | 55 | ✅ Pass | ~9s | None |  
+| **PostgreSQL Integration** | 55 | ✅ Pass | ~15s | Docker |
 
-**Total: 140 automated tests passing**
+**Total: 142 automated tests passing**
 
 ### 📊 Test Breakdown
-- **make test**: 140 tests (87 unit + 53 integration) - comprehensive validation without external dependencies
-- **Complete coverage**: All layers from domain logic to API integration
+- **make test**: 142 tests (87 unit + 55 integration) - comprehensive validation without external dependencies
+- **make test-postgres**: 55 PostgreSQL integration tests - production-like validation with real database
+- **Complete coverage**: All layers from domain logic to database integration
 
 ## 🛠️ Enhanced Development Commands
 
@@ -182,10 +188,12 @@ make test              # 140 tests without external dependencies
 - Run with explicit persistence: `PERSISTENCE_MODE=in-memory`
 
 ### PostgreSQL Tests Failing  
-- Ensure PostgreSQL is running: `make db-up`
+- Ensure PostgreSQL is running: `make test-postgres` (starts container automatically)
+- Or manually start: `docker-compose up -d postgres`
 - Check database connection string in environment
 - Verify database initialization completed
 - Check Docker container status: `docker-compose ps`
+- For debugging: `docker-compose logs postgres`
 
 ---
 
