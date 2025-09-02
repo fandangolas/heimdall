@@ -15,7 +15,7 @@ from heimdall.domain.value_objects import (
 )
 
 
-class TestDatabase:
+class MockDatabase:
     """Simulated database with transaction-like isolation for tests."""
 
     def __init__(self):
@@ -63,11 +63,11 @@ class TestDatabase:
         self.rollback_transaction()
 
 
-class TestDependencyFactory:
+class MockDependencyFactory:
     """Factory for creating test dependencies with shared infrastructure."""
 
     def __init__(self):
-        self.db = TestDatabase()
+        self.db = MockDatabase()
         self._token_service = None
         self._event_bus = None
 
@@ -203,7 +203,7 @@ class IntegrationTestBase:
     @classmethod
     def setup_class(cls):
         """Setup shared test infrastructure once per test class."""
-        cls.factory = TestDependencyFactory()
+        cls.factory = MockDependencyFactory()
 
     def setup_method(self):
         """Setup isolated state for each test method."""
