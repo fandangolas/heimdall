@@ -26,6 +26,12 @@ class PostgreSQLTestManager:
 
     def start_postgres_container(self):
         """Start PostgreSQL container if not already running."""
+        # Skip Docker container management in CI - use GitHub Actions service
+        if os.getenv("CI") or os.getenv("GITHUB_ACTIONS"):
+            print("🔧 Running in CI - using GitHub Actions PostgreSQL service")
+            self.container_started = True
+            return
+
         try:
             # Check if container is already running
             result = subprocess.run(
