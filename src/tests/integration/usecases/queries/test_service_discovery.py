@@ -4,7 +4,7 @@ import time
 
 import pytest
 
-from tests.integration.postgres.api_helpers import get_root
+from tests.integration.aux.api_helpers import get_root
 
 
 @pytest.mark.asyncio

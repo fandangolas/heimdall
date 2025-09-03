@@ -4,7 +4,7 @@ import uuid
 
 import pytest
 
-from tests.integration.postgres.api_helpers import register_user
+from tests.integration.aux.api_helpers import register_user
 
 
 @pytest.mark.asyncio

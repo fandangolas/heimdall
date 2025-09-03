@@ -2,7 +2,7 @@
 
 import pytest
 
-from tests.integration.postgres.api_helpers import login_user, register_user
+from tests.integration.aux.api_helpers import login_user, register_user
 
 
 @pytest.mark.asyncio
