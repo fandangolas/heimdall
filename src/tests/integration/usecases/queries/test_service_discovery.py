@@ -6,8 +6,8 @@ import pytest
 
 from tests.integration.aux.api_helpers import get_root
 
-# Load fixtures from api_helpers module
-pytest_plugins = ["tests.integration.aux.api_helpers"]
+# Load fixtures from api_fixtures module
+pytest_plugins = ["tests.integration.aux.api_fixtures"]
 
 
 @pytest.mark.asyncio
