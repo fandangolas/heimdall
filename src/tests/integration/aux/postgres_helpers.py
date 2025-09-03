@@ -1,17 +1,9 @@
-"""PostgreSQL integration testing fixtures and configuration."""
+"""PostgreSQL-specific helpers for integration tests."""
 
 import os
-from collections.abc import AsyncIterator
 
 import asyncpg
 import pytest
-import pytest_asyncio
-from httpx import ASGITransport, AsyncClient
-
-from heimdall.infrastructure.persistence.postgres.database import (
-    initialize_database,
-)
-from heimdall.presentation.api.main import create_app
 
 # Database configuration
 DATABASE_URL = os.getenv(
@@ -47,30 +39,7 @@ async def cleanup_database() -> None:
         await conn.close()
 
 
-@pytest_asyncio.fixture(scope="session", autouse=True)
 async def verify_postgres():
     """Verify PostgreSQL is accessible before running tests."""
     if not await check_postgres_connection():
         pytest.exit("PostgreSQL is not accessible. Exiting tests.", 1)
-
-
-@pytest_asyncio.fixture
-async def api_client() -> AsyncIterator[AsyncClient]:
-    """Create API client for testing."""
-    # Set environment for PostgreSQL
-    os.environ["PERSISTENCE_MODE"] = "postgres"
-    os.environ["DATABASE_URL"] = DATABASE_URL
-
-    # Initialize database and create app
-    await initialize_database()
-    app = create_app()
-
-    # Clean database before test
-    await cleanup_database()
-
-    # Create async HTTP client
-    transport = ASGITransport(app=app)
-    async with AsyncClient(transport=transport, base_url="http://test") as client:
-        yield client
-        # Clean database after test
-        await cleanup_database()

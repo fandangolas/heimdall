@@ -3,8 +3,16 @@
 import uuid
 
 import pytest
+import pytest_asyncio
 
 from tests.integration.aux.api_helpers import register_user
+from tests.integration.aux.postgres_helpers import verify_postgres
+
+
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def verify_postgres_session():
+    """Verify PostgreSQL is accessible before running tests."""
+    await verify_postgres()
 
 
 @pytest.mark.asyncio
