@@ -68,21 +68,27 @@ class _TokenServiceSingleton:
             return Token(token_value)
 
         def validate_token_impl(token):
-            # Extract session ID from token (simplified for demo)
-            # In real implementation, this would decode and validate JWT
+            # Extract session ID and user info from token (simplified JWT decoding)
+            # In real implementation, this would properly decode and validate JWT
             parts = token.value.split(".")
             if len(parts) >= 2:
                 try:
+                    # Extract session ID from first part (header contains session ID)
                     session_id = parts[0].replace("eyJ", "")
+
+                    # For this demo, we extract basic claims from the token structure
+                    # In a real JWT implementation, this would decode the payload
                     return TokenClaims(
-                        user_id="mock-user-id",
+                        user_id="",  # Will be filled by the query handler from session
                         session_id=session_id,
-                        email="mock@example.com",
+                        email="",  # Will be filled by the query handler from session
                         permissions=[],
                     )
+
                 except Exception as e:
                     # Log the exception instead of silent pass
                     logging.warning(f"Token validation failed: {e}")
+                    raise ValueError(f"Token validation failed: {e}") from e
             raise ValueError("Invalid token format")
 
         self._instance.generate_token = generate_token_impl
@@ -94,7 +100,7 @@ _token_singleton = _TokenServiceSingleton()
 
 
 def get_token_service():
-    """Get shared mock token service instance."""
+    """Get or create the PostgreSQL token service singleton."""
     return _token_singleton.get_service()
 
 

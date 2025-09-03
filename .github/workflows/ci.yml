@@ -83,6 +83,21 @@ jobs:
   test-integration:
     name: Integration Tests
     runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_PASSWORD: heimdall_secure_password
+          POSTGRES_USER: heimdall_user
+          POSTGRES_DB: heimdall
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
 
     steps:
       - name: Checkout code
@@ -113,10 +128,25 @@ jobs:
             httpx \
             faker
 
+      - name: Wait for PostgreSQL
+        run: |
+          until pg_isready -h localhost -p 5432; do
+            echo "Waiting for PostgreSQL..."
+            sleep 2
+          done
+          echo "PostgreSQL is ready!"
 
-      - name: Run integration tests
+      - name: Initialize database schema
+        run: |
+          echo "🔧 Initializing database schema for CI testing..."
+          PGPASSWORD=heimdall_secure_password psql -h localhost -U heimdall_user -d heimdall -f migrations/init-test.sql
+          echo "✅ Database schema initialized"
+
+      - name: Run PostgreSQL integration tests
         run: |
           export PYTHONPATH=${{ github.workspace }}/src
+          export PERSISTENCE_MODE=postgres
+          export DATABASE_URL="postgresql://heimdall_user:heimdall_secure_password@localhost:5432/heimdall"
           python -m pytest src/tests/integration/ -v --tb=short
 
 
@@ -243,7 +273,7 @@ jobs:
           echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
           echo "| Linting | ${{ needs.lint.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Unit Tests | ${{ needs.test-unit.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Integration Tests | ${{ needs.test-integration.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Integration Tests (PostgreSQL) | ${{ needs.test-integration.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Build Verification | ${{ needs.build-verify.result }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Security Scanning | ${{ needs.security-scan.result }} |" >> $GITHUB_STEP_SUMMARY
           

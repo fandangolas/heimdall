@@ -1,22 +1,25 @@
 """Integration tests for user login command."""
 
-from tests.integration.aux.base_test import BaseCommandIntegrationTest
+import pytest
+
+from tests.integration.postgres.base_test import BasePostgreSQLCommandTest
 
 
-class TestUserLoginCommand(BaseCommandIntegrationTest):
+class TestUserLoginCommand(BasePostgreSQLCommandTest):
     """Test user login through API endpoints."""
 
-    def test_successful_login_after_registration(self):
+    @pytest.mark.asyncio
+    async def test_successful_login_after_registration(self):
         """Test successful login flow after user registration."""
         # Arrange - Register a user first
         email = "loginuser@example.com"
         password = "LoginPassword123"
 
-        register_response = self.api.register_user(email, password)
+        register_response = await self.api.register_user(email, password)
         assert register_response.status_code == 200
 
         # Act - Login with same credentials
-        login_response = self.api.login_user(email, password)
+        login_response = await self.api.login_user(email, password)
 
         # Assert
         assert login_response.status_code == 200
@@ -29,10 +32,11 @@ class TestUserLoginCommand(BaseCommandIntegrationTest):
         token = data["access_token"]
         assert len(token.split(".")) == 3
 
-    def test_login_with_nonexistent_user_fails(self):
+    @pytest.mark.asyncio
+    async def test_login_with_nonexistent_user_fails(self):
         """Test login with user that doesn't exist."""
         # Act
-        response = self.api.login_user(
+        response = await self.api.login_user(
             email="nonexistent@example.com", password="AnyPassword123"
         )
 
@@ -41,59 +45,62 @@ class TestUserLoginCommand(BaseCommandIntegrationTest):
         data = response.json()
         assert "error" in data or "detail" in data
 
-    def test_login_with_wrong_password_fails(self):
+    @pytest.mark.asyncio
+    async def test_login_with_wrong_password_fails(self):
         """Test login with correct email but wrong password."""
         # Arrange - Register a user
         email = "wrongpass@example.com"
         correct_password = "CorrectPassword123"
         wrong_password = "WrongPassword456"
 
-        self.api.register_user(email, correct_password)
+        await self.api.register_user(email, correct_password)
 
         # Act - Login with wrong password
-        response = self.api.login_user(email, wrong_password)
+        response = await self.api.login_user(email, wrong_password)
 
         # Assert
         assert response.status_code == 400
         data = response.json()
         assert "error" in data or "detail" in data
 
-    def test_login_request_validation(self):
+    @pytest.mark.asyncio
+    async def test_login_request_validation(self):
         """Test login request validation."""
         # Missing email
-        response = self.api.client.post("/auth/login", json={"password": "Password123"})
+        response = await self.api.post("/auth/login", json={"password": "Password123"})
         assert response.status_code == 422
 
         # Missing password
-        response = self.api.client.post(
+        response = await self.api.post(
             "/auth/login", json={"email": "test@example.com"}
         )
         assert response.status_code == 422
 
         # Invalid email format
-        response = self.api.client.post(
+        response = await self.api.post(
             "/auth/login", json={"email": "invalid-email", "password": "Password123"}
         )
         assert response.status_code == 422
 
         # Password too short
-        response = self.api.client.post(
+        response = await self.api.post(
             "/auth/login", json={"email": "test@example.com", "password": "short"}
         )
         assert response.status_code == 422
 
-    def test_multiple_successful_logins_same_user(self):
+    @pytest.mark.asyncio
+    async def test_multiple_successful_logins_same_user(self):
         """Test that the same user can login multiple times."""
         # Arrange
         email = "multilogin@example.com"
         password = "MultiLogin123"
 
-        self.api.register_user(email, password)
+        await self.api.register_user(email, password)
 
         # Act - Login multiple times
-        response1 = self.api.login_user(email, password)
-        response2 = self.api.login_user(email, password)
-        response3 = self.api.login_user(email, password)
+        response1 = await self.api.login_user(email, password)
+        response2 = await self.api.login_user(email, password)
+        response3 = await self.api.login_user(email, password)
 
         # Assert - All should succeed
         assert response1.status_code == 200
@@ -109,17 +116,18 @@ class TestUserLoginCommand(BaseCommandIntegrationTest):
         assert len(token2.split(".")) == 3
         assert len(token3.split(".")) == 3
 
-    def test_login_with_different_case_email_normalization(self):
+    @pytest.mark.asyncio
+    async def test_login_with_different_case_email_normalization(self):
         """Test email case normalization during login."""
         # Arrange - Register with lowercase
         email = "casetest@example.com"
         password = "CaseTest123"
 
-        self.api.register_user(email, password)
+        await self.api.register_user(email, password)
 
         # Act - Login with different cases
-        response_upper = self.api.login_user("CASETEST@EXAMPLE.COM", password)
-        response_mixed = self.api.login_user("CaseTest@Example.Com", password)
+        response_upper = await self.api.login_user("CASETEST@EXAMPLE.COM", password)
+        response_mixed = await self.api.login_user("CaseTest@Example.Com", password)
 
         # Assert - Should work due to email normalization
         # Note: This depends on our email normalization implementation
@@ -131,21 +139,21 @@ class TestUserLoginCommand(BaseCommandIntegrationTest):
             # Email normalization not implemented - both should fail consistently
             assert response_mixed.status_code == 400
 
-    def test_concurrent_logins_same_user(self):
+    @pytest.mark.asyncio
+    async def test_concurrent_logins_same_user(self):
         """Test concurrent login attempts for the same user."""
 
         # Arrange
         email = "concurrent@example.com"
         password = "Concurrent123"
 
-        self.api.register_user(email, password)
+        await self.api.register_user(email, password)
 
         # Act - Simulate concurrent requests
-        # Note: TestClient doesn't support true concurrency,
-        # so this is more of a rapid sequential test
+        # Note: Sequential execution for now
         responses = []
         for _ in range(5):
-            response = self.api.login_user(email, password)
+            response = await self.api.login_user(email, password)
             responses.append(response)
 
         # Assert - All should succeed
@@ -153,16 +161,17 @@ class TestUserLoginCommand(BaseCommandIntegrationTest):
             assert response.status_code == 200
             assert "access_token" in response.json()
 
-    def test_login_response_contains_required_fields(self):
+    @pytest.mark.asyncio
+    async def test_login_response_contains_required_fields(self):
         """Test that login response contains all required fields."""
         # Arrange
         email = "responsetest@example.com"
         password = "Response123"
 
-        self.api.register_user(email, password)
+        await self.api.register_user(email, password)
 
         # Act
-        response = self.api.login_user(email, password)
+        response = await self.api.login_user(email, password)
 
         # Assert
         assert response.status_code == 200

@@ -3,16 +3,19 @@
 import datetime
 import time
 
-from tests.integration.aux.base_test import BaseQueryIntegrationTest
+import pytest
+
+from tests.integration.postgres.base_test import BasePostgreSQLQueryTest
 
 
-class TestHealthCheckQueries(BaseQueryIntegrationTest):
+class TestHealthCheckQueries(BasePostgreSQLQueryTest):
     """Test health check endpoints (read operations for monitoring)."""
 
-    def test_basic_health_check(self):
+    @pytest.mark.asyncio
+    async def test_basic_health_check(self):
         """Test basic health check endpoint."""
         # Act
-        response = self.api.get_health()
+        response = await self.api.get_health()
 
         # Assert
         assert response.status_code == 200
@@ -25,10 +28,11 @@ class TestHealthCheckQueries(BaseQueryIntegrationTest):
         # Timestamp should be in ISO format
         datetime.datetime.fromisoformat(data["timestamp"].replace("Z", "+00:00"))
 
-    def test_detailed_health_check(self):
+    @pytest.mark.asyncio
+    async def test_detailed_health_check(self):
         """Test detailed health check endpoint."""
         # Act
-        response = self.api.get_detailed_health()
+        response = await self.api.get_health_detailed()
 
         # Assert
         assert response.status_code == 200
@@ -53,10 +57,11 @@ class TestHealthCheckQueries(BaseQueryIntegrationTest):
             assert "status" in info
             assert "type" in info
 
-    def test_readiness_probe(self):
+    @pytest.mark.asyncio
+    async def test_readiness_probe(self):
         """Test Kubernetes readiness probe endpoint."""
         # Act
-        response = self.api.get_ready()
+        response = await self.api.get("/ready")
 
         # Assert
         assert response.status_code == 200
@@ -65,10 +70,11 @@ class TestHealthCheckQueries(BaseQueryIntegrationTest):
         assert data["status"] == "ready"
         assert "timestamp" in data
 
-    def test_liveness_probe(self):
+    @pytest.mark.asyncio
+    async def test_liveness_probe(self):
         """Test Kubernetes liveness probe endpoint."""
         # Act
-        response = self.api.get_live()
+        response = await self.api.get("/live")
 
         # Assert
         assert response.status_code == 200
@@ -77,11 +83,12 @@ class TestHealthCheckQueries(BaseQueryIntegrationTest):
         assert data["status"] == "alive"
         assert "timestamp" in data
 
-    def test_health_checks_are_fast(self):
+    @pytest.mark.asyncio
+    async def test_health_checks_are_fast(self):
         """Test that health checks respond quickly (performance requirement)."""
         # Test basic health check speed
         start_time = time.time()
-        response = self.api.get_health()
+        response = await self.api.get_health()
         end_time = time.time()
 
         assert response.status_code == 200
@@ -92,15 +99,16 @@ class TestHealthCheckQueries(BaseQueryIntegrationTest):
             f"Health check took {response_time:.3f}s, expected < 0.05s"
         )
 
-    def test_health_checks_independent_of_auth_state(self):
+    @pytest.mark.asyncio
+    async def test_health_checks_independent_of_auth_state(self):
         """Test that health checks work regardless of authentication state."""
         # Health checks should work without any authentication setup
 
         # Act - Call health endpoints before any users exist
-        health_response = self.api.get_health()
-        detailed_response = self.api.get_detailed_health()
-        ready_response = self.api.get_ready()
-        live_response = self.api.get_live()
+        health_response = await self.api.get_health()
+        detailed_response = await self.api.get_health_detailed()
+        ready_response = await self.api.get("/ready")
+        live_response = await self.api.get("/live")
 
         # Assert - All should succeed
         assert health_response.status_code == 200
@@ -108,12 +116,13 @@ class TestHealthCheckQueries(BaseQueryIntegrationTest):
         assert ready_response.status_code == 200
         assert live_response.status_code == 200
 
-    def test_concurrent_health_check_requests(self):
+    @pytest.mark.asyncio
+    async def test_concurrent_health_check_requests(self):
         """Test that health checks handle concurrent requests well."""
-        # Act - Multiple rapid requests
+        # Act - Multiple rapid requests (sequential for now)
         responses = []
         for _ in range(10):
-            response = self.api.get_health()
+            response = await self.api.get_health()
             responses.append(response)
 
         # Assert - All should succeed
@@ -122,19 +131,21 @@ class TestHealthCheckQueries(BaseQueryIntegrationTest):
             data = response.json()
             assert data["status"] == "healthy"
 
-    def test_health_check_content_type(self):
+    @pytest.mark.asyncio
+    async def test_health_check_content_type(self):
         """Test that health checks return proper content type."""
         # Act
-        response = self.api.get_health()
+        response = await self.api.get_health()
 
         # Assert
         assert response.status_code == 200
         assert "application/json" in response.headers["content-type"]
 
-    def test_health_check_endpoints_discoverable(self):
+    @pytest.mark.asyncio
+    async def test_health_check_endpoints_discoverable(self):
         """Test that health check endpoints are listed in root endpoint."""
         # Act
-        root_response = self.api.get_root()
+        root_response = await self.api.get_root()
 
         # Assert
         assert root_response.status_code == 200
@@ -143,10 +154,11 @@ class TestHealthCheckQueries(BaseQueryIntegrationTest):
         # Root should indicate health endpoint location
         assert data["health"] == "/health"
 
-    def test_system_information_in_detailed_health(self):
+    @pytest.mark.asyncio
+    async def test_system_information_in_detailed_health(self):
         """Test that detailed health includes system information."""
         # Act
-        response = self.api.get_detailed_health()
+        response = await self.api.get_health_detailed()
 
         # Assert
         assert response.status_code == 200
@@ -159,10 +171,11 @@ class TestHealthCheckQueries(BaseQueryIntegrationTest):
         python_version = system["python_version"]
         assert len(python_version.split(".")) >= 2
 
-    def test_health_metrics_structure(self):
+    @pytest.mark.asyncio
+    async def test_health_metrics_structure(self):
         """Test that health metrics have expected structure."""
         # Act
-        response = self.api.get_detailed_health()
+        response = await self.api.get_health_detailed()
 
         # Assert
         assert response.status_code == 200

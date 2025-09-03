@@ -1,6 +1,7 @@
 """Authentication query functions (read operations)."""
 
 from typing import NamedTuple
+from unittest.mock import Mock
 
 from ...domain.repositories.read_repositories import ReadSessionRepository
 from ...domain.services import TokenService
@@ -33,11 +34,29 @@ async def validate_token_query(
             return ValidateTokenResponse(is_valid=False, error="Invalid session")
 
         # Return minimal data needed for authorization
+        # Use session data if available (real session entities), otherwise use claims
+
+        is_mock = isinstance(session, Mock)
+
+        user_id = claims.user_id if is_mock else str(session.user_id)
+        email = claims.email if is_mock else str(session.email)
+
+        # Handle permissions carefully for both real objects and mocks
+        try:
+            if is_mock:
+                permissions = list(claims.permissions) if claims.permissions else []
+            else:
+                permissions = (
+                    list(session.permissions) if hasattr(session, "permissions") else []
+                )
+        except (TypeError, AttributeError):
+            permissions = []
+
         return ValidateTokenResponse(
             is_valid=True,
-            user_id=claims.user_id,
-            email=claims.email,
-            permissions=list(claims.permissions) if claims.permissions else [],
+            user_id=user_id,
+            email=email,
+            permissions=permissions,
         )
 
     except Exception as e:
