@@ -125,26 +125,26 @@ src/
 │           └── health.py    # Health check endpoints
 └── tests/
     ├── unit/           # 87 tests - Domain & CQRS logic
-    └── integration/    # 46 tests - Full-stack API testing
-        ├── conftest.py        # PostgreSQL connection verification & fixtures
-        ├── usecases/          # Organized by CQRS patterns
-        │   ├── commands/      # Write operation tests (1% traffic)
-        │   └── queries/       # Read operation tests (99% traffic)
-        └── postgres/          # PostgreSQL-specific utilities
-            ├── api_helpers.py # Functional API helpers (register_user, login_user, etc.)
-            └── conftest.py    # PostgreSQL-specific fixtures (minimal)
+    └── integration/    # 36 tests - Full-stack API testing
+        ├── aux/               # Test infrastructure utilities
+        │   ├── api_fixtures.py    # FastAPI fixtures (api_client) - pytest_plugins
+        │   ├── api_helpers.py     # Functional API helpers (register_user, etc.)
+        │   └── postgres_helpers.py # PostgreSQL utilities (connection, cleanup)
+        └── usecases/          # Organized by CQRS patterns
+            ├── commands/      # Write operation tests (1% traffic)
+            └── queries/       # Read operation tests (99% traffic)
 ```
 
-## 🧪 Testing (133 Total Tests)
+## 🧪 Testing (123 Total Tests)
 
 ### Quick Commands (Makefile)
 ```bash
 # Default: Run all test suites (requires PostgreSQL)
-make test              # 133 tests in ~16s (unit + integration)
+make test              # 123 tests in ~14s (unit + integration)
 
 # Specific test suites
 make test-unit         # 87 tests in ~5s (fast feedback)
-make test-integration  # 46 tests in ~11s (API integration with PostgreSQL)
+make test-integration  # 36 tests in ~9s (API integration with PostgreSQL)
 make test-postgres     # Alias for test-integration (PostgreSQL required)
 
 # Development workflows
@@ -165,12 +165,13 @@ PYTHONPATH=src python -m pytest src/tests/integration/ -v
 
 ### Test Coverage
 - **87 Unit Tests**: Domain entities, CQRS commands/queries, value objects, events
-- **46 Integration Tests**: Full-stack API testing through FastAPI endpoints
-  - Commands: Write operations (login, register) - 1% traffic
-  - Queries: Read operations (token validation, health checks) - 99% traffic
+- **36 Integration Tests**: Full-stack API testing through FastAPI endpoints with PostgreSQL
+  - Commands: Write operations (login, register) - 1% traffic (8 tests)
+  - Queries: Read operations (token validation, health checks) - 99% traffic (28 tests)
   - **PostgreSQL Required**: Tests use PostgreSQL for realistic persistence validation
-  - **Functional Approach**: Uses pure function helpers instead of class-based infrastructure
-- **Total: 133 automated tests** with comprehensive coverage
+  - **Clean Architecture**: Separated fixtures, helpers, and PostgreSQL utilities
+  - **No conftest.py**: Direct fixture loading via pytest_plugins for explicit control
+- **Total: 123 automated tests** with comprehensive coverage
 
 ### PostgreSQL Integration Testing
 Integration tests require PostgreSQL to be running and use production-like persistence:
@@ -184,11 +185,12 @@ make test-integration
 ```
 
 **Key Features:**
-- **Database Isolation**: Each test starts with a clean database state
+- **Database Isolation**: Each test starts with a clean database state  
 - **Real JWT Tokens**: Proper token validation with database session lookup
 - **ACID Compliance**: Tests verify database constraints and transactions
 - **Connection Verification**: Tests verify PostgreSQL availability before running
-- **Functional Helpers**: Pure function API helpers instead of complex class hierarchies
+- **Clean Architecture**: Separated fixtures (api_fixtures.py), helpers (api_helpers.py), PostgreSQL (postgres_helpers.py)
+- **No pytest warnings**: File separation eliminates PytestAssertRewriteWarning
 - **External Container Management**: Users manage PostgreSQL containers independently
 
 ## 📖 Documentation
