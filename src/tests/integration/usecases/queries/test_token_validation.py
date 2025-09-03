@@ -11,6 +11,9 @@ from tests.integration.aux.api_helpers import (
     validate_token,
 )
 
+# Load fixtures from api_helpers module
+pytest_plugins = ["tests.integration.aux.api_helpers"]
+
 
 @pytest.mark.asyncio
 async def test_valid_token_validation(api_client):

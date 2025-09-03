@@ -8,6 +8,9 @@ import pytest_asyncio
 from tests.integration.aux.api_helpers import register_user
 from tests.integration.aux.postgres_helpers import verify_postgres
 
+# Load fixtures from api_helpers module
+pytest_plugins = ["tests.integration.aux.api_helpers"]
+
 
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def verify_postgres_session():

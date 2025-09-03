@@ -4,6 +4,9 @@ import pytest
 
 from tests.integration.aux.api_helpers import login_user, register_user
 
+# Load fixtures from api_helpers module
+pytest_plugins = ["tests.integration.aux.api_helpers"]
+
 
 @pytest.mark.asyncio
 async def test_successful_login_after_registration(api_client):

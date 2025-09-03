@@ -6,6 +6,9 @@ import pytest
 
 from tests.integration.aux.api_helpers import get_root
 
+# Load fixtures from api_helpers module
+pytest_plugins = ["tests.integration.aux.api_helpers"]
+
 
 @pytest.mark.asyncio
 async def test_root_endpoint_service_information(api_client):

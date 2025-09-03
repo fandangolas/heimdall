@@ -10,6 +10,9 @@ from tests.integration.aux.api_helpers import (
     get_health_detailed,
 )
 
+# Load fixtures from api_helpers module
+pytest_plugins = ["tests.integration.aux.api_helpers"]
+
 
 @pytest.mark.asyncio
 async def test_basic_health_check(api_client):
