@@ -3,7 +3,7 @@
 from collections.abc import Callable
 from typing import Any
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, Header, HTTPException, status
 
 from heimdall.application.dto import LoginRequest, RegisterRequest
 from heimdall.domain.value_objects import Token
@@ -164,9 +164,7 @@ async def validate_token(
     description="Get current authenticated user information from Authorization header",
 )
 async def get_current_user(
-    authorization: str = Depends(
-        lambda: None
-    ),  # TODO: Extract from Authorization header
+    authorization: str | None = Header(None),
     auth_functions: dict[str, Callable[..., Any]] = Depends(get_auth_functions_fastapi),  # noqa: B008
 ) -> ValidateTokenResponseSchema:
     """Get current user information from JWT token in Authorization header."""
@@ -197,7 +195,7 @@ async def get_current_user(
             is_valid=response.is_valid,
             user_id=response.user_id,
             email=response.email,
-            permissions=list(response.permissions),
+            permissions=list(response.permissions) if response.permissions else [],
             error=None,
         )
 

@@ -57,7 +57,7 @@
 5. **FastAPI Presentation Layer**: Complete API routes with dependency injection ✅
 6. **Integration Tests**: Restructured by CQRS patterns - /commands vs /queries ✅
 
-**Status**: Complete CQRS + FastAPI implementation with 132 passing tests (87 unit + 45 integration)
+**Status**: Complete CQRS + FastAPI implementation with 123 passing tests (87 unit + 36 integration)
 
 ### Phase 3: Redis Caching Layer
 **Goal**: Sub-10ms token validation performance with distributed caching
@@ -128,11 +128,14 @@ heimdall/
 │   │           └── health.py    # Health check endpoints
 │   └── tests/
 │       ├── unit/           # 87 tests - Domain, commands, queries
-│       ├── integration/    # 45 tests - Full-stack API testing
-│       │   ├── aux/        # Test infrastructure (HeimdallAPIClient)
-│       │   └── usecases/   # Organized by CQRS patterns
-│       │       ├── commands/  # Write operation tests (1% traffic)
-│       │       └── queries/   # Read operation tests (99% traffic)
+│       ├── integration/    # 36 tests - Full-stack API testing
+│       │   ├── aux/            # Test infrastructure utilities
+│       │   │   ├── api_fixtures.py    # FastAPI fixtures (api_client) - pytest_plugins
+│       │   │   ├── api_helpers.py     # Functional API helpers (register_user, etc.)
+│       │   │   └── postgres_helpers.py # PostgreSQL utilities (connection, cleanup)
+│       │   └── usecases/       # Organized by CQRS patterns
+│       │       ├── commands/   # Write operation tests (1% traffic)
+│       │       └── queries/    # Read operation tests (99% traffic)
 │       └── e2e/           # End-to-end API tests
 ├── docker/
 ├── migrations/
@@ -147,8 +150,12 @@ heimdall/
 python --version  # Should show Python 3.13.7
 
 # Run tests (current setup)
-PYTHONPATH=src python -m pytest src/tests/unit/test_functional_use_cases.py -v  # Unit tests
-PYTHONPATH=src python -m pytest src/tests/ -v  # All tests (132 total)
+PYTHONPATH=src python -m pytest src/tests/unit/ -v  # Unit tests (87 total)
+PYTHONPATH=src python -m pytest src/tests/ -v  # All tests (123 total)
+
+# Integration tests require PostgreSQL to be running
+docker-compose up -d postgres  # Start PostgreSQL container
+PYTHONPATH=src python -m pytest src/tests/integration/ -v  # Integration tests (36 total)
 
 # Run development server (when ready)
 poetry install    # Install dependencies
@@ -197,12 +204,14 @@ docker-compose logs -f  # View logs
 5. **Phase 5**: Event sourcing and projections
 6. **Phase 6**: High availability and scaling
 
-## Testing Strategy (132 Total Tests)
+## Testing Strategy (123 Total Tests)
 - **Unit Tests**: 87 tests - Core business logic, CQRS commands/queries, domain entities
-- **Integration Tests**: 45 tests - Full-stack API testing through FastAPI endpoints
-  - **Commands**: Write operations (login, register, logout) - 1% traffic
-  - **Queries**: Read operations (token validation, health checks) - 99% traffic
-  - **Service Discovery**: API documentation and endpoint discovery
+- **Integration Tests**: 36 tests - Full-stack API testing through FastAPI endpoints with PostgreSQL
+  - **PostgreSQL Required**: Tests require PostgreSQL to be running (`docker-compose up -d postgres`)
+  - **Commands**: Write operations (login, register) - 1% traffic (8 tests)
+  - **Queries**: Read operations (token validation, health checks) - 99% traffic (28 tests)
+  - **Clean Architecture**: Separated fixtures, helpers, and PostgreSQL utilities
+  - **No conftest.py**: Direct fixture loading via pytest_plugins for explicit control
 - **Load Tests**: Validate performance requirements (token validation <100ms)
 - **Security Tests**: Authentication flows, input validation, rate limiting
 
@@ -269,6 +278,8 @@ docker-compose logs -f  # View logs
 ## Recent Updates (August 2024)
 - **PostgreSQL Integration**: Added full PostgreSQL support with asyncpg driver for production persistence
 - **Dual Persistence Mode**: Environment-based switching between in-memory (development) and PostgreSQL (production)
-- **Enhanced Testing**: 143 total tests including PostgreSQL integration tests with Docker support
+- **Refactored Integration Tests**: 133 total tests with simplified functional approach (removed ~200 lines of boilerplate)
+- **Functional Test Infrastructure**: Eliminated empty base classes, uses pure function helpers and direct fixture injection
+- **External PostgreSQL Management**: Tests check connection availability instead of managing Docker containers
 - **Linting Configuration**: Configured ruff to support PascalCase factory functions while maintaining security rules
 - **API Refinement**: `TokenClaims` factory now auto-generates `issued_at` timestamp (removed as parameter)

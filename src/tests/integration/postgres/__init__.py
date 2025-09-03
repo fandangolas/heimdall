@@ -1,1 +1,0 @@
-"""PostgreSQL integration testing infrastructure."""

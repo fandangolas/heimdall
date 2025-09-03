@@ -125,28 +125,27 @@ src/
 │           └── health.py    # Health check endpoints
 └── tests/
     ├── unit/           # 87 tests - Domain & CQRS logic
-    └── integration/    # 55 tests - Full-stack API testing (dual-mode)
-        ├── aux/        # Test infrastructure (8 tests)
-        ├── usecases/   # Organized by CQRS patterns (47 tests)
-        │   ├── commands/  # Write operation tests
-        │   └── queries/   # Read operation tests
-        └── postgres/   # PostgreSQL-specific base classes & utilities
-            ├── base_test.py       # PostgreSQL test base classes
-            ├── conftest.py        # PostgreSQL test fixtures
-            └── test_*.py          # Basic PostgreSQL functionality tests
+    └── integration/    # 36 tests - Full-stack API testing
+        ├── aux/               # Test infrastructure utilities
+        │   ├── api_fixtures.py    # FastAPI fixtures (api_client) - pytest_plugins
+        │   ├── api_helpers.py     # Functional API helpers (register_user, etc.)
+        │   └── postgres_helpers.py # PostgreSQL utilities (connection, cleanup)
+        └── usecases/          # Organized by CQRS patterns
+            ├── commands/      # Write operation tests (1% traffic)
+            └── queries/       # Read operation tests (99% traffic)
 ```
 
-## 🧪 Testing (142 Total Tests)
+## 🧪 Testing (123 Total Tests)
 
 ### Quick Commands (Makefile)
 ```bash
-# Default: Run all test suites (comprehensive, no Docker)
-make test              # 142 tests in ~14s (unit + integration)
+# Default: Run all test suites (requires PostgreSQL)
+make test              # 123 tests in ~14s (unit + integration)
 
 # Specific test suites
 make test-unit         # 87 tests in ~5s (fast feedback)
-make test-integration  # 55 tests in ~9s (API integration, in-memory)
-make test-postgres     # 55 tests in ~15s (PostgreSQL integration, requires Docker)
+make test-integration  # 36 tests in ~9s (API integration with PostgreSQL)
+make test-postgres     # Alias for test-integration (PostgreSQL required)
 
 # Development workflows
 make quick             # Same as test-unit (fast development)
@@ -159,37 +158,40 @@ make ci-test           # Complete CI validation
 # Unit tests only
 PYTHONPATH=src python -m pytest src/tests/unit/ -v
 
-# Integration tests (in-memory)
-PERSISTENCE_MODE=in-memory PYTHONPATH=src python -m pytest src/tests/integration/usecases/ src/tests/integration/aux/ -v
-
-# PostgreSQL integration tests (requires Docker)
-PERSISTENCE_MODE=postgres PYTHONPATH=src python -m pytest src/tests/integration/ -v
+# Integration tests (requires PostgreSQL to be running)
+docker-compose up -d postgres  # Start PostgreSQL container
+PYTHONPATH=src python -m pytest src/tests/integration/ -v
 ```
 
 ### Test Coverage
 - **87 Unit Tests**: Domain entities, CQRS commands/queries, value objects, events
-- **55 Integration Tests**: Full-stack API testing through FastAPI endpoints
-  - Commands: Write operations (login, register) - 1% traffic
-  - Queries: Read operations (token validation, health checks) - 99% traffic
-  - **Dual Mode**: Same tests run with both in-memory and PostgreSQL persistence
-- **Total: 142 automated tests** with comprehensive coverage
+- **36 Integration Tests**: Full-stack API testing through FastAPI endpoints with PostgreSQL
+  - Commands: Write operations (login, register) - 1% traffic (8 tests)
+  - Queries: Read operations (token validation, health checks) - 99% traffic (28 tests)
+  - **PostgreSQL Required**: Tests use PostgreSQL for realistic persistence validation
+  - **Clean Architecture**: Separated fixtures, helpers, and PostgreSQL utilities
+  - **No conftest.py**: Direct fixture loading via pytest_plugins for explicit control
+- **Total: 123 automated tests** with comprehensive coverage
 
 ### PostgreSQL Integration Testing
-The same integration tests run in both persistence modes for complete validation:
+Integration tests require PostgreSQL to be running and use production-like persistence:
 
 ```bash
-# In-memory mode (default) - fast, no dependencies
-make test-integration
+# Start PostgreSQL first (required)
+docker-compose up -d postgres
 
-# PostgreSQL mode - production-like, requires Docker
-make test-postgres
+# Run integration tests with PostgreSQL
+make test-integration
 ```
 
 **Key Features:**
-- **Database Isolation**: Each test starts with a clean database state
+- **Database Isolation**: Each test starts with a clean database state  
 - **Real JWT Tokens**: Proper token validation with database session lookup
 - **ACID Compliance**: Tests verify database constraints and transactions
-- **Container Management**: Automatic PostgreSQL container lifecycle
+- **Connection Verification**: Tests verify PostgreSQL availability before running
+- **Clean Architecture**: Separated fixtures (api_fixtures.py), helpers (api_helpers.py), PostgreSQL (postgres_helpers.py)
+- **No pytest warnings**: File separation eliminates PytestAssertRewriteWarning
+- **External Container Management**: Users manage PostgreSQL containers independently
 
 ## 📖 Documentation
 
@@ -204,7 +206,7 @@ For detailed architectural decisions and trade-offs, see [Technical Assessment](
 5. **Explicit dependencies** - No hidden state or magic
 6. **Progressive complexity** - Start simple, evolve as needed
 7. **API-first design** - Complete FastAPI integration with type safety
-8. **Test-driven architecture** - 132 tests covering all layers
+8. **Test-driven architecture** - 133 tests covering all layers
 
 ## 🔄 CQRS Implementation (Phase 2 Complete)
 
@@ -264,7 +266,7 @@ await auth_functions["validate"](token)     # Read operation (99% traffic)
 - ✅ **API Integration**: Complete FastAPI presentation layer
 - ✅ **Type Safety**: Pydantic schemas for all request/response boundaries
 - ✅ **Maintainability**: Clear separation of concerns
-- ✅ **Testing**: 132 tests with full API integration coverage
+- ✅ **Testing**: 133 tests with full API integration coverage
 - ✅ **Evolution**: Ready for Redis caching layer in Phase 3
 
 ## 🗄️ PostgreSQL Integration (Phase 2.5 Complete)
@@ -369,8 +371,9 @@ docker-compose logs -f
 # Install dependencies
 make install  # or poetry install
 
-# Run all tests to verify setup  
-make test     # 140 tests in ~14s (unit + integration)
+# Run all tests to verify setup (requires PostgreSQL)
+docker-compose up -d postgres  # Start PostgreSQL first
+make test     # 133 tests in ~16s (unit + integration)
 
 # Quick development feedback
 make quick    # 87 unit tests in ~5s
