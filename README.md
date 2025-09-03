@@ -1,10 +1,20 @@
 # Heimdall 🛡️
 
-A high-performance authentication and authorization system designed for distributed microservices, built with Clean Architecture and functional programming principles.
+Heimdall is an authentication service designed to handle extreme read-heavy workloads typical in banking and financial systems. The project demonstrates a pragmatic blend of functional programming and object-oriented design, optimized for scenarios where token validations vastly outnumber user registrations.
 
-## Overview
+## About the Name
 
-Heimdall (named after the Norse guardian of Bifrost) is an authentication service designed to handle extreme read-heavy workloads typical in banking and financial systems. The project demonstrates a pragmatic blend of functional programming and object-oriented design, optimized for scenarios where token validations vastly outnumber user registrations.
+<div align="left">
+<img src="docs/heimdall.gif" alt="Heimdall Guardian" width="300" align="right" style="margin-left: 20px; margin-bottom: 20px;">
+
+In Norse mythology, **Heimdall** is the vigilant guardian of Bifrost, the rainbow bridge connecting the realms. He possesses extraordinary senses and can see across all nine worlds, making him the perfect sentinel to detect any threat.
+
+Just like his mythological namesake, our Heimdall stands guard at the gateway of your system, deciding who has permission to enter. With his all-seeing capabilities, Heimdall authenticates and authorizes every request, ensuring only legitimate users gain access to your protected resources.
+
+*"None shall pass without Heimdall's approval."*
+</div>
+
+<br clear="right">
 
 ## 📊 Design Rationale
 
