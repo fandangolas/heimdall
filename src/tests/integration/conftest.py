@@ -74,20 +74,3 @@ async def api_client() -> AsyncIterator[AsyncClient]:
         yield client
         # Clean database after test
         await cleanup_database()
-
-
-# Functional helper for database queries (for tests that need it)
-async def query_database(query: str, *args):
-    """Execute a database query and return results."""
-    conn = await asyncpg.connect(DATABASE_URL)
-    try:
-        if query.strip().upper().startswith("SELECT"):
-            if "COUNT(*)" in query:
-                return await conn.fetchval(query, *args)
-            else:
-                result = await conn.fetch(query, *args)
-                return [dict(row) for row in result]
-        else:
-            return await conn.execute(query, *args)
-    finally:
-        await conn.close()
