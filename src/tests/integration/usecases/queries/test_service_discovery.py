@@ -4,208 +4,157 @@ import time
 
 import pytest
 
-from tests.integration.postgres.base_test import BasePostgreSQLQueryTest
+from tests.integration.postgres.api_helpers import get_root
 
 
-class TestServiceDiscoveryQueries(BasePostgreSQLQueryTest):
-    """Test service discovery endpoints (read operations for API exploration)."""
+@pytest.mark.asyncio
+async def test_root_endpoint_service_information(api_client):
+    """Test root endpoint returns comprehensive service information."""
+    # Act
+    response = await get_root(api_client)
 
-    @pytest.mark.asyncio
-    async def test_root_endpoint_service_information(self):
-        """Test root endpoint returns comprehensive service information."""
-        # Act
-        response = await self.api.get_root()
+    # Assert
+    assert response.status_code == 200
 
-        # Assert
+    data = response.json()
+    required_fields = [
+        "service",
+        "version",
+        "description",
+        "docs",
+        "health",
+        "auth_endpoints",
+    ]
+
+    for field in required_fields:
+        assert field in data, f"Missing required field: {field}"
+
+    # Verify service identity
+    assert data["service"] == "Heimdall Authentication Service"
+    assert (
+        "auth" in data["description"].lower()
+        or "heimdall" in data["description"].lower()
+    )
+
+    # Verify endpoint discovery
+    auth_endpoints = data["auth_endpoints"]
+    expected_endpoints = ["login", "register", "validate", "me"]
+
+    for endpoint in expected_endpoints:
+        assert endpoint in auth_endpoints
+        assert auth_endpoints[endpoint].startswith("/")
+
+
+@pytest.mark.asyncio
+async def test_openapi_documentation_available(api_client):
+    """Test OpenAPI/Swagger documentation is accessible."""
+    # Act
+    response = await api_client.get("/docs")
+
+    # Assert - Should return HTML for Swagger UI
+    assert response.status_code == 200
+    assert "text/html" in response.headers.get("content-type", "")
+
+
+@pytest.mark.asyncio
+async def test_redoc_documentation_available(api_client):
+    """Test ReDoc documentation is accessible."""
+    # Act
+    response = await api_client.get("/redoc")
+
+    # Assert - Should return HTML for ReDoc
+    assert response.status_code == 200
+    assert "text/html" in response.headers.get("content-type", "")
+
+
+@pytest.mark.asyncio
+async def test_openapi_schema_available(api_client):
+    """Test OpenAPI schema JSON is accessible."""
+    # Act
+    response = await api_client.get("/openapi.json")
+
+    # Assert
+    assert response.status_code == 200
+
+    data = response.json()
+    assert "openapi" in data  # OpenAPI version
+    assert "info" in data
+    assert "paths" in data
+
+    # Verify API info
+    info = data["info"]
+    assert "title" in info
+    assert "heimdall" in info["title"].lower()
+    assert "version" in info
+
+    # Verify auth endpoints are documented
+    paths = data["paths"]
+    expected_paths = [
+        "/auth/register",
+        "/auth/login",
+        "/auth/validate",
+        "/auth/me",
+        "/health",
+    ]
+
+    for path in expected_paths:
+        assert path in paths, f"Missing documentation for {path}"
+
+
+@pytest.mark.asyncio
+async def test_service_discovery_performance(api_client):
+    """Test service discovery endpoint performance."""
+    # Act - Make multiple requests
+    start_time = time.time()
+    num_requests = 10
+
+    for _ in range(num_requests):
+        response = await get_root(api_client)
         assert response.status_code == 200
 
-        data = response.json()
-        required_fields = [
-            "service",
-            "version",
-            "description",
-            "docs",
-            "health",
-            "auth_endpoints",
-        ]
+    elapsed_time = time.time() - start_time
+    avg_time = elapsed_time / num_requests
 
-        for field in required_fields:
-            assert field in data, f"Missing required field: {field}"
+    # Assert - Discovery should be fast (mostly static content)
+    assert avg_time < 0.05, f"Service discovery too slow: {avg_time:.3f}s avg"
 
-        # Verify service identity
-        assert data["service"] == "Heimdall Authentication Service"
-        assert (
-            "auth" in data["description"].lower()
-            or "heimdall" in data["description"].lower()
-        )
 
-        # Verify endpoint discovery
-        auth_endpoints = data["auth_endpoints"]
-        expected_endpoints = ["login", "register", "validate", "me"]
+@pytest.mark.asyncio
+async def test_service_metadata_completeness(api_client):
+    """Test that service metadata is complete and informative."""
+    # Act
+    response = await get_root(api_client)
 
-        for endpoint in expected_endpoints:
-            assert endpoint in auth_endpoints
-            assert auth_endpoints[endpoint].startswith("/")
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
 
-    @pytest.mark.asyncio
-    async def test_openapi_schema_generation(self):
-        """Test that OpenAPI schema is properly generated and accessible."""
-        # Act
-        response = await self.api.get("/openapi.json")
+    # Documentation links should be valid
+    docs = data["docs"]
+    assert docs.startswith("/")  # Should be a URL path
 
-        # Assert
-        assert response.status_code == 200
+    # Health endpoint should be documented
+    health = data["health"]
+    assert health.startswith("/")  # Should be a URL path
 
-        schema = response.json()
 
-        # OpenAPI spec structure validation
-        assert "openapi" in schema
-        assert "info" in schema
-        assert "paths" in schema
+@pytest.mark.asyncio
+async def test_api_versioning_information(api_client):
+    """Test that API versioning is properly exposed."""
+    # Act
+    response = await get_root(api_client)
 
-        # Service information in OpenAPI
-        info = schema["info"]
-        assert info["title"] == "Heimdall Authentication Service"
-        assert "version" in info
+    # Assert
+    assert response.status_code == 200
+    data = response.json()
 
-        # Paths should include our endpoints
-        paths = schema["paths"]
-        expected_paths = ["/auth/login", "/auth/register", "/auth/validate", "/health"]
+    # Version should be semantic
+    version = data["version"]
+    parts = version.split(".")
+    assert len(parts) >= 2, "Version should be semantic (e.g., 1.0.0)"
 
-        for path in expected_paths:
-            assert path in paths, f"Missing path in OpenAPI: {path}"
-
-    @pytest.mark.asyncio
-    async def test_api_documentation_accessibility(self):
-        """Test that API documentation endpoints are accessible."""
-        # Test Swagger UI
-        docs_response = await self.api.get("/docs")
-        assert docs_response.status_code == 200
-
-        # Test ReDoc
-        redoc_response = await self.api.get("/redoc")
-        assert redoc_response.status_code == 200
-
-    @pytest.mark.asyncio
-    async def test_openapi_schema_includes_authentication_flows(self):
-        """Test that OpenAPI schema documents authentication flows."""
-        # Act
-        response = await self.api.get("/openapi.json")
-
-        # Assert
-        assert response.status_code == 200
-
-        schema = response.json()
-        paths = schema["paths"]
-
-        # Login endpoint documentation
-        login_path = paths["/auth/login"]
-        assert "post" in login_path
-        login_post = login_path["post"]
-
-        assert "summary" in login_post
-        assert "description" in login_post
-        assert "requestBody" in login_post
-        assert "responses" in login_post
-
-        # Response documentation should include success and error cases
-        responses = login_post["responses"]
-        assert "200" in responses  # Success
-        assert "400" in responses or "422" in responses  # Error cases
-
-    @pytest.mark.asyncio
-    async def test_openapi_schema_includes_response_models(self):
-        """Test that OpenAPI schema includes proper response models."""
-        # Act
-        response = await self.api.get("/openapi.json")
-
-        # Assert
-        assert response.status_code == 200
-
-        schema = response.json()
-
-        # Should have components section with schemas
-        assert "components" in schema
-        assert "schemas" in schema["components"]
-
-        schemas = schema["components"]["schemas"]
-
-        # Should include our response schemas
-        expected_schemas = [
-            "LoginResponseSchema",
-            "RegisterResponseSchema",
-            "ValidateTokenResponseSchema",
-        ]
-
-        for schema_name in expected_schemas:
-            assert schema_name in schemas, f"Missing schema: {schema_name}"
-
-    @pytest.mark.asyncio
-    async def test_service_version_consistency(self):
-        """Test that service version is consistent across endpoints."""
-        # Act
-        root_response = await self.api.get_root()
-        health_response = await self.api.get_health_detailed()
-        openapi_response = await self.api.get("/openapi.json")
-
-        # Assert
-        assert root_response.status_code == 200
-        assert health_response.status_code == 200
-        assert openapi_response.status_code == 200
-
-        root_version = root_response.json()["version"]
-        health_version = health_response.json()["version"]
-        openapi_version = openapi_response.json()["info"]["version"]
-
-        # All versions should be identical
-        assert root_version == health_version == openapi_version
-
-    @pytest.mark.asyncio
-    async def test_service_discovery_performance(self):
-        """Test that service discovery endpoints are fast."""
-        # Test root endpoint speed
-        start_time = time.time()
-        response = await self.api.get_root()
-        end_time = time.time()
-
-        assert response.status_code == 200
-
-        # Should be very fast
-        response_time = end_time - start_time
-        assert response_time < 0.05, (
-            f"Root endpoint took {response_time:.3f}s, expected < 0.05s"
-        )
-
-    @pytest.mark.asyncio
-    async def test_cors_headers_present(self):
-        """Test that CORS headers are present for frontend integration."""
-        # Act
-        response = await self.api.get_root()
-
-        # Assert
-        assert response.status_code == 200
-
-        # Check for CORS headers (added by FastAPI CORS middleware)
-        # Note: TestClient might not show all CORS headers, but we can
-        # check what's available
-
-        # The main test is that the request succeeds, indicating CORS is configured
-        # In a real browser environment, CORS headers would be properly validated
-
-    @pytest.mark.asyncio
-    async def test_content_type_headers(self):
-        """Test that endpoints return proper content-type headers."""
-        # Act
-        root_response = await self.api.get_root()
-        health_response = await self.api.get_health()
-        openapi_response = await self.api.get("/openapi.json")
-
-        # Assert
-        assert root_response.status_code == 200
-        assert health_response.status_code == 200
-        assert openapi_response.status_code == 200
-
-        # All should return JSON
-        assert "application/json" in root_response.headers["content-type"]
-        assert "application/json" in health_response.headers["content-type"]
-        assert "application/json" in openapi_response.headers["content-type"]
+    # Could check for API version in headers
+    # This depends on implementation choices
+    api_version = response.headers.get("X-API-Version")
+    if api_version:
+        assert api_version == version

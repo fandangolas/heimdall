@@ -16,7 +16,8 @@ dependencies = [
     "redis (>=6.4.0,<7.0.0)",
     "pyjwt[crypto] (>=2.8.0,<3.0.0)",
     "passlib[bcrypt] (>=1.7.4,<2.0.0)",
-    "python-multipart (>=0.0.20,<0.0.21)"
+    "python-multipart (>=0.0.20,<0.0.21)",
+    "email-validator (>=2.3.0,<3.0.0)"
 ]
 
 

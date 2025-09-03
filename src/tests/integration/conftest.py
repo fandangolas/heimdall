@@ -1,11 +1,9 @@
 """PostgreSQL integration testing fixtures and configuration."""
 
 import os
-import subprocess
-import time
+from collections.abc import AsyncIterator
 
 import asyncpg
-import httpx
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
@@ -15,249 +13,81 @@ from heimdall.infrastructure.persistence.postgres.database import (
 )
 from heimdall.presentation.api.main import create_app
 
-
-class PostgreSQLTestManager:
-    """Manages PostgreSQL container and database lifecycle for testing."""
-
-    def __init__(self):
-        self.container_name = "heimdall-postgres"
-        self.db_url = "postgresql://heimdall_user:heimdall_secure_password@localhost:5432/heimdall"
-        self.container_started = False
-
-    def start_postgres_container(self):
-        """Start PostgreSQL container if not already running."""
-        # Skip Docker container management in CI - use GitHub Actions service
-        if os.getenv("CI") or os.getenv("GITHUB_ACTIONS"):
-            print("🔧 Running in CI - using GitHub Actions PostgreSQL service")
-            self.container_started = True
-            return
-
-        try:
-            # Check if container is already running
-            result = subprocess.run(
-                [
-                    "docker",
-                    "ps",
-                    "--filter",
-                    f"name={self.container_name}",
-                    "--format",
-                    "{{.Names}}",
-                ],
-                capture_output=True,
-                text=True,
-                check=True,
-            )
-
-            if self.container_name in result.stdout:
-                print(f"✅ PostgreSQL container {self.container_name} already running")
-                self.container_started = True
-                return
-
-            # Start container using docker-compose
-            print("🚀 Starting PostgreSQL container...")
-            subprocess.run(
-                ["docker-compose", "up", "-d", "postgres"],
-                check=True,
-                capture_output=True,
-            )
-
-            # Wait for PostgreSQL to be ready
-            print("⏳ Waiting for PostgreSQL to be ready...")
-            max_attempts = 30
-            for _attempt in range(max_attempts):
-                try:
-                    result = subprocess.run(
-                        [
-                            "docker",
-                            "exec",
-                            self.container_name,
-                            "pg_isready",
-                            "-U",
-                            "heimdall_user",
-                            "-d",
-                            "heimdall",
-                        ],
-                        capture_output=True,
-                        check=True,
-                    )
-                    if result.returncode == 0:
-                        print("✅ PostgreSQL is ready!")
-                        self.container_started = True
-                        return
-                except subprocess.CalledProcessError:
-                    pass
-
-                time.sleep(2)
-
-            raise RuntimeError("PostgreSQL container failed to become ready")
-
-        except subprocess.CalledProcessError as e:
-            raise RuntimeError(f"Failed to start PostgreSQL container: {e}") from e
-
-    def stop_postgres_container(self):
-        """Stop PostgreSQL container."""
-        # For integration testing, we keep the container running
-        # Comment out for now to avoid stopping the container between tests
-        print("INFO: Keeping PostgreSQL container running for subsequent tests")
-
-        # Original stopping code (commented out)
-        # if not self.container_started:
-        #     return
-
-        # try:
-        #     print("🛑 Stopping PostgreSQL container...")
-        #     subprocess.run(
-        #         ["docker-compose", "down"],
-        #         check=True,
-        #         capture_output=True
-        #     )
-        #     self.container_started = False
-        #     print("✅ PostgreSQL container stopped")
-        # except subprocess.CalledProcessError as e:
-        #     print(f"⚠️ Error stopping PostgreSQL container: {e}")
+# Database configuration
+DATABASE_URL = os.getenv(
+    "DATABASE_URL",
+    "postgresql://heimdall_user:heimdall_secure_password@localhost:5432/heimdall",
+)
 
 
-class PostgreSQLAPIClient:
-    """Enhanced API client for PostgreSQL integration testing."""
-
-    def __init__(self, app):
-        self.app = app
-        self.client = None
-        self.transport = None
-        self.db_url = "postgresql://heimdall_user:heimdall_secure_password@localhost:5432/heimdall"
-
-    async def start(self):
-        """Initialize the async client and database."""
-        # Initialize database connection
-        await initialize_database()
-
-        # Create async HTTP client
-        self.transport = ASGITransport(app=self.app)
-        self.client = AsyncClient(transport=self.transport, base_url="http://test")
-
-    async def stop(self):
-        """Clean up the client and database connections."""
-        if self.client:
-            await self.client.aclose()
-        # Don't close database connections - we're using a persistent container
-
-    async def cleanup_database(self):
-        """Clean up database for test isolation."""
-        conn = await asyncpg.connect(self.db_url)
-        try:
-            # Delete all test data to ensure clean state
-            await conn.execute("DELETE FROM sessions")
-            await conn.execute("DELETE FROM users")
-            await conn.execute("DELETE FROM audit_events")
-        finally:
-            await conn.close()
-
-    # HTTP Client Methods
-    async def get(self, url: str, **kwargs) -> httpx.Response:
-        """HTTP GET request."""
-        if not self.client:
-            raise RuntimeError("Client not started. Call start() first.")
-        return await self.client.get(url, **kwargs)
-
-    async def post(self, url: str, **kwargs) -> httpx.Response:
-        """HTTP POST request."""
-        if not self.client:
-            raise RuntimeError("Client not started. Call start() first.")
-        return await self.client.post(url, **kwargs)
-
-    # API Helper Methods
-    async def register_user(self, email: str, password: str) -> httpx.Response:
-        """Register a new user."""
-        return await self.post(
-            "/auth/register", json={"email": email, "password": password}
-        )
-
-    async def login_user(self, email: str, password: str) -> httpx.Response:
-        """Login a user."""
-        return await self.post(
-            "/auth/login", json={"email": email, "password": password}
-        )
-
-    async def validate_token(self, token: str) -> httpx.Response:
-        """Validate a JWT token."""
-        return await self.post("/auth/validate", json={"token": token})
-
-    async def get_current_user(self, token: str) -> httpx.Response:
-        """Get current user info."""
-        headers = {"Authorization": f"Bearer {token}"}
-        return await self.get("/auth/me", headers=headers)
-
-    async def get_health(self) -> httpx.Response:
-        """Get health check."""
-        return await self.get("/health")
-
-    async def get_health_detailed(self) -> httpx.Response:
-        """Get detailed health check."""
-        return await self.get("/health/detailed")
-
-    async def get_root(self) -> httpx.Response:
-        """Get root service information."""
-        return await self.get("/")
-
-    # Database Helper Methods
-    async def get_user_from_db(self, email: str):
-        """Get user from database directly."""
-        conn = await asyncpg.connect(self.db_url)
-        try:
-            user_row = await conn.fetchrow(
-                "SELECT id, email, password_hash, status, is_verified, "
-                "created_at FROM users WHERE email = $1",
-                email,
-            )
-            return dict(user_row) if user_row else None
-        finally:
-            await conn.close()
-
-    async def count_users_in_db(self) -> int:
-        """Count total users in database."""
-        conn = await asyncpg.connect(self.db_url)
-        try:
-            count = await conn.fetchval("SELECT COUNT(*) FROM users")
-            return count
-        finally:
-            await conn.close()
+async def check_postgres_connection() -> bool:
+    """Check if PostgreSQL is accessible."""
+    try:
+        conn = await asyncpg.connect(DATABASE_URL)
+        await conn.close()
+        return True
+    except Exception as e:
+        print(f"\n⚠️  PostgreSQL not accessible at {DATABASE_URL}")
+        print(f"Error: {e}")
+        print("\n📝 Please ensure PostgreSQL is running:")
+        print("   docker-compose up -d postgres")
+        print("   OR ensure your PostgreSQL service is running\n")
+        return False
 
 
-# Global PostgreSQL manager instance
-_postgres_manager = PostgreSQLTestManager()
+async def cleanup_database() -> None:
+    """Clean up database for test isolation."""
+    conn = await asyncpg.connect(DATABASE_URL)
+    try:
+        # Delete all test data to ensure clean state
+        await conn.execute("DELETE FROM sessions")
+        await conn.execute("DELETE FROM users")
+        await conn.execute("DELETE FROM audit_events")
+    finally:
+        await conn.close()
 
 
-@pytest.fixture(scope="session", autouse=True)
-def postgres_container():
-    """Session-level fixture to manage PostgreSQL container lifecycle."""
-    _postgres_manager.start_postgres_container()
-    yield
-    _postgres_manager.stop_postgres_container()
-
-
-@pytest.fixture(scope="module")
-def postgres_app():
-    """Create FastAPI app configured for PostgreSQL mode."""
-    # Set environment for PostgreSQL
-    os.environ["PERSISTENCE_MODE"] = "postgres"
-    os.environ["DATABASE_URL"] = (
-        "postgresql://heimdall_user:heimdall_secure_password@localhost:5432/heimdall"
-    )
-    app = create_app()
-    return app
+@pytest_asyncio.fixture(scope="session", autouse=True)
+async def verify_postgres():
+    """Verify PostgreSQL is accessible before running tests."""
+    if not await check_postgres_connection():
+        pytest.exit("PostgreSQL is not accessible. Exiting tests.", 1)
 
 
 @pytest_asyncio.fixture
-async def postgres_api_client(postgres_app):
-    """Create PostgreSQL API client with database cleanup for test isolation."""
-    client = PostgreSQLAPIClient(postgres_app)
-    await client.start()
+async def api_client() -> AsyncIterator[AsyncClient]:
+    """Create API client for testing."""
+    # Set environment for PostgreSQL
+    os.environ["PERSISTENCE_MODE"] = "postgres"
+    os.environ["DATABASE_URL"] = DATABASE_URL
+
+    # Initialize database and create app
+    await initialize_database()
+    app = create_app()
 
     # Clean database before test
-    await client.cleanup_database()
+    await cleanup_database()
 
-    yield client
+    # Create async HTTP client
+    transport = ASGITransport(app=app)
+    async with AsyncClient(transport=transport, base_url="http://test") as client:
+        yield client
+        # Clean database after test
+        await cleanup_database()
 
-    # Clean database after test and close connections
-    await client.cleanup_database()
-    await client.stop()
+
+# Functional helper for database queries (for tests that need it)
+async def query_database(query: str, *args):
+    """Execute a database query and return results."""
+    conn = await asyncpg.connect(DATABASE_URL)
+    try:
+        if query.strip().upper().startswith("SELECT"):
+            if "COUNT(*)" in query:
+                return await conn.fetchval(query, *args)
+            else:
+                result = await conn.fetch(query, *args)
+                return [dict(row) for row in result]
+        else:
+            return await conn.execute(query, *args)
+    finally:
+        await conn.close()
